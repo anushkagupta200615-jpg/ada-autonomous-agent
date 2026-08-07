@@ -588,9 +588,7 @@ export default function NewsFeed() {
     const video = videoRef.current;
     if (!video) return;
 
-    if (video.readyState < 2) {
-      video.style.opacity = '0';
-    } else {
+    if (video.readyState >= 2) {
       video.style.opacity = '1';
     }
 
