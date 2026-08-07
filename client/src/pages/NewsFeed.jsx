@@ -648,10 +648,12 @@ export default function NewsFeed() {
   }, []);
 
   return (
-    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 text-white font-body font-medium`}>
+    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 bg-black text-white font-body font-medium`}>
       {/* Background Video */}
       <video
         ref={videoRef}
+        autoPlay
+        loop
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0"
