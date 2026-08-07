@@ -86,9 +86,9 @@ const T = {
 };
 
 const THREAT_COLORS = {
-  CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', glow: 'shadow-[0_0_30px_rgba(239,68,68,0.15)]', bar: 'bg-red-500' },
-  HIGH:     { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200', glow: 'shadow-[0_0_30px_rgba(249,115,22,0.15)]', bar: 'bg-orange-500' },
-  MEDIUM:   { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200', glow: 'shadow-[0_0_20px_rgba(234,179,8,0.1)]', bar: 'bg-yellow-500' },
+  CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', glow: 'shadow-[0_0_30px_rgba(239,68,68,0.15)]', bar: 'bg-red-500' },
+  HIGH:     { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', glow: 'shadow-[0_0_30px_rgba(249,115,22,0.15)]', bar: 'bg-orange-500' },
+  MEDIUM:   { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', glow: 'shadow-[0_0_20px_rgba(234,179,8,0.1)]', bar: 'bg-yellow-500' },
 };
 
 // ─── PDF PRINT TRIGGER ────────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ function ConfidenceMeter({ score, tc }) {
       onMouseEnter={() => setReplay(true)}
       onMouseLeave={() => setReplay(false)}
     >
-      <div className="flex-1 h-2 bg-black/5 rounded-full overflow-hidden relative">
+      <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden relative">
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: `${score}%` }}
@@ -206,7 +206,7 @@ function ConfidenceMeter({ score, tc }) {
           )}
         </AnimatePresence>
       </div>
-      <span className="text-[10px] font-mono font-bold text-black/50">{score}%</span>
+      <span className="text-[10px] font-mono font-bold text-white/50">{score}%</span>
     </div>
   );
 }
@@ -222,12 +222,12 @@ function ResearchPaperCard({ paper, lang }) {
       initial={{ opacity: 0, y: 20, scale: 0.97, rotateX: 8 }}
       animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.15 }}
-      className={`mt-6 rounded-3xl border p-6 bg-white/80 backdrop-blur-md ${tc.border} ${tc.glow}`}
+      className={`mt-6 rounded-3xl border p-6 liquid-glass ${tc.border} ${tc.glow}`}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
-          <BookOpen size={18} className="text-black/60" />
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-black/50">{t.research_context}</span>
+          <BookOpen size={18} className="text-white/60" />
+          <span className="text-xs font-mono font-bold uppercase tracking-widest text-white/50">{t.research_context}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className={`text-[10px] font-mono font-extrabold uppercase tracking-widest px-3 py-1 rounded-full ${tc.bg} ${tc.text}`}>
@@ -241,9 +241,9 @@ function ResearchPaperCard({ paper, lang }) {
         </div>
       </div>
 
-      <h3 className="font-bold text-lg text-black leading-snug mb-2">{paper.title}</h3>
+      <h3 className="font-bold text-lg text-white leading-snug mb-2">{paper.title}</h3>
       
-      <div className="flex flex-wrap gap-3 mb-5 text-[11px] font-mono text-black/50">
+      <div className="flex flex-wrap gap-3 mb-5 text-[11px] font-mono text-white/50">
         <span className="flex items-center gap-1.5"><Users size={12}/> {paper.authors.slice(0, 2).join(', ')}</span>
         <span className="flex items-center gap-1.5"><Calendar size={12}/> {paper.year}</span>
         <span className="flex items-center gap-1.5"><Star size={12}/> {paper.citations.toLocaleString()} {t.citations}</span>
@@ -251,9 +251,9 @@ function ResearchPaperCard({ paper, lang }) {
       </div>
 
       {/* Abstract */}
-      <div className="rounded-2xl bg-black/[0.03] border border-black/5 p-5 mb-5">
-        <p className="text-[10px] font-mono uppercase tracking-widest text-black/40 font-bold mb-3">{t.abstract}</p>
-        <p className="text-sm text-black/70 leading-relaxed">
+      <div className="rounded-2xl bg-white/10 border border-white/10 p-5 mb-5">
+        <p className="text-[10px] font-mono uppercase tracking-widest text-white/40 font-bold mb-3">{t.abstract}</p>
+        <p className="text-sm text-white/70 leading-relaxed">
           {lang === 'hi' ? paper.abstract_hi : paper.abstract}
         </p>
       </div>
@@ -263,19 +263,19 @@ function ResearchPaperCard({ paper, lang }) {
         {paper.cve && paper.cve !== 'N/A' && paper.cve !== 'N/A (Design flaw)' && (
           <div className="flex items-center gap-3">
             <AlertTriangle size={13} className="text-orange-500" />
-            <span className="text-xs font-mono font-bold text-black/50">{t.cve}:</span>
+            <span className="text-xs font-mono font-bold text-white/50">{t.cve}:</span>
             <span className="text-xs font-mono text-orange-600 font-bold bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100">{paper.cve}</span>
           </div>
         )}
         {paper.affected_systems?.length > 0 && (
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-black/40 font-bold flex items-center gap-2 mb-2"><Cpu size={11}/> {t.affected}</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-white/40 font-bold flex items-center gap-2 mb-2"><Cpu size={11}/> {t.affected}</span>
             <div className="flex flex-wrap gap-2">
               {paper.affected_systems.map((sys, i) => (
                 <motion.span key={i}
                   initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + i * 0.06, type: 'spring' }}
-                  className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-black/5 border border-black/5 text-black/60 font-semibold"
+                  className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-white/10 border border-white/10 text-white/60 font-semibold"
                 >
                   {sys}
                 </motion.span>
@@ -327,7 +327,7 @@ function PostCard({ post, lang, index }) {
       animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
       transition={{ type: 'spring', stiffness: 220, damping: 22, mass: 0.9, delay: index * 0.06 }}
       onMouseMove={handleMouseMove}
-      className="relative break-inside-avoid rounded-[2rem] bg-white/70 border border-white backdrop-blur-2xl overflow-hidden flex flex-col group mb-6"
+      className="relative break-inside-avoid rounded-[2rem] liquid-glass backdrop-blur-2xl overflow-hidden flex flex-col group mb-6"
       style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)' }}
       whileHover={{ boxShadow: '0 25px 60px -15px rgba(0,0,0,0.15)', y: -4 }}
     >
@@ -360,7 +360,7 @@ function PostCard({ post, lang, index }) {
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono bg-black text-white px-3.5 py-1.5 rounded-full uppercase tracking-widest font-extrabold shadow">
+            <span className="text-[10px] font-mono bg-white text-black px-3.5 py-1.5 rounded-full uppercase tracking-widest font-extrabold shadow">
               {t.verified_alert}
             </span>
             {post.paper && (
@@ -369,7 +369,7 @@ function PostCard({ post, lang, index }) {
               </span>
             )}
           </div>
-          <span className="text-[11px] font-mono text-black/30 font-bold">
+          <span className="text-[11px] font-mono text-white/30 font-bold">
             {new Date(post.createdAt).toLocaleDateString()}
           </span>
         </div>
@@ -378,7 +378,7 @@ function PostCard({ post, lang, index }) {
         {post.confidenceScore && (
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest flex items-center gap-1.5">
                 <Target size={12}/> {t.confidence}
               </span>
             </div>
@@ -387,14 +387,14 @@ function PostCard({ post, lang, index }) {
         )}
 
         {/* Glitch headline on hover */}
-        <h2 className="text-2xl font-extrabold font-heading leading-tight mb-5 text-black group-hover:text-indigo-700 transition-colors duration-300">
+        <h2 className="text-2xl font-extrabold font-heading leading-tight mb-5 text-white group-hover:text-indigo-700 transition-colors duration-300">
           {text?.split('.')[0] || post.text?.split('.')[0] || 'Intelligence Report'}
         </h2>
 
         <div className="h-px w-full bg-gradient-to-r from-black/10 via-black/5 to-transparent mb-5" />
 
         {/* Rationale */}
-        <p className="text-sm text-black/65 leading-relaxed mb-6 font-medium flex-1">
+        <p className="text-sm text-white/65 leading-relaxed mb-6 font-medium flex-1">
           {rationale}
         </p>
 
@@ -402,13 +402,13 @@ function PostCard({ post, lang, index }) {
         {post.paper && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center justify-between w-full p-4 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] border border-black/5 transition-all mb-5 group/btn"
+            className="flex items-center justify-between w-full p-4 rounded-2xl bg-white/10 hover:bg-black/[0.06] border border-white/10 transition-all mb-5 group/btn"
           >
-            <span className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-black/60 group-hover/btn:text-black">
+            <span className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-white/60 group-hover/btn:text-white">
               <BookOpen size={14} />{t.research_context}
             </span>
             <motion.span animate={{ rotate: expanded ? 180 : 0 }} transition={{ type: 'spring', stiffness: 300 }}>
-              <ChevronDown size={14} className="text-black/40" />
+              <ChevronDown size={14} className="text-white/40" />
             </motion.span>
           </button>
         )}
@@ -429,11 +429,11 @@ function PostCard({ post, lang, index }) {
 
         {/* Sources with Credibility Dots */}
         {post.sources?.length > 0 && (
-          <div className="mt-4 pt-5 border-t border-black/5">
-            <span className="block text-[10px] font-mono text-black/30 uppercase tracking-[0.2em] font-extrabold mb-3">{t.primary_sources}</span>
+          <div className="mt-4 pt-5 border-t border-white/10">
+            <span className="block text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] font-extrabold mb-3">{t.primary_sources}</span>
             {post.sources.map((source, j) => (
               <a key={j} href={source} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-between p-3 rounded-xl bg-black/[0.03] hover:bg-blue-50 hover:text-blue-700 transition-all group/link border border-transparent hover:border-blue-100">
+                className="flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-blue-50 hover:text-blue-700 transition-all group/link border border-transparent hover:border-blue-100">
                 <div className="flex items-center gap-2 overflow-hidden">
                   {/* Credibility Dot (Green for arXiv) */}
                   <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] flex-shrink-0" title="Tier 1 Verified Source" />
@@ -446,12 +446,12 @@ function PostCard({ post, lang, index }) {
         )}
 
         {/* PDF Download + Share Section */}
-        <div className="mt-5 pt-5 border-t border-black/5 space-y-3">
+        <div className="mt-5 pt-5 border-t border-white/10 space-y-3">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => triggerPostPDF(post, lang)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-black text-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-black/80 transition-all shadow-[0_8px_20px_-6px_rgba(0,0,0,0.25)]"
+            className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-white text-black text-xs font-mono font-bold uppercase tracking-widest hover:bg-black/80 transition-all shadow-[0_8px_20px_-6px_rgba(0,0,0,0.25)]"
           >
             <Download size={14} className="text-white/80" />
             {t.download_pdf}
@@ -460,7 +460,7 @@ function PostCard({ post, lang, index }) {
           {/* Share Buttons */}
           {(post.linkedin || post.email) && (
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-black/30 font-bold mb-2 text-center mt-4">{t.share_section}</p>
+              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-white/30 font-bold mb-2 text-center mt-4">{t.share_section}</p>
               <div className="grid grid-cols-2 gap-2">
                 {post.linkedin && (
                   <motion.button
@@ -648,7 +648,7 @@ export default function NewsFeed() {
   }, []);
 
   return (
-    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 text-black font-body font-medium`}>
+    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 text-white font-body font-medium`}>
       {/* Background Video */}
       <video
         ref={videoRef}
@@ -658,7 +658,7 @@ export default function NewsFeed() {
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
       />
       {/* White Overlay to make background white but keep animation visible */}
-      <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] z-0" />
+      
       
       <div className="relative z-10">
       
@@ -669,7 +669,7 @@ export default function NewsFeed() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 z-50 bg-black text-white px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 border border-white/20"
+            className="fixed bottom-8 right-8 z-50 bg-white text-black px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 border border-white/20"
           >
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-mono text-xs font-bold uppercase tracking-widest">{t.new_post}</span>
@@ -682,15 +682,15 @@ export default function NewsFeed() {
         <div className="flex items-center justify-between mb-8">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-black/10 hover:bg-white hover:shadow-lg transition-all text-xs font-mono uppercase tracking-widest font-bold"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-white/20 hover:bg-white hover:shadow-lg transition-all text-xs font-mono uppercase tracking-widest font-bold"
           >
             <ArrowLeft size={14}/> {t.home}
           </button>
           
           {/* Mood / Cadence Activity Graph */}
-          <div className="flex items-center gap-3 bg-white/50 backdrop-blur border border-black/10 px-4 py-2 rounded-full">
+          <div className="flex items-center gap-3 bg-white/50 backdrop-blur border border-white/20 px-4 py-2 rounded-full">
             <Activity size={14} className={mood === 'panicked' ? 'text-red-500' : 'text-blue-500'} />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-black/60">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-white/60">
               {mood === 'panicked' ? t.mood_panicked : mood === 'skeptical' ? t.mood_skeptical : t.mood_baseline}
             </span>
             <div className="flex gap-1 h-3 items-end ml-2">
@@ -707,7 +707,7 @@ export default function NewsFeed() {
 
           <button
             onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
-            className="relative px-4 py-2 rounded-full bg-black text-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-black/80 transition-all flex items-center gap-2 overflow-hidden group"
+            className="relative px-4 py-2 rounded-full bg-white text-black text-xs font-mono font-bold uppercase tracking-widest hover:bg-black/80 transition-all flex items-center gap-2 overflow-hidden group"
           >
             <Globe size={14} />
             {lang === 'en' ? 'HI' : 'EN'}
@@ -730,7 +730,7 @@ export default function NewsFeed() {
             {t.badge}
           </motion.div>
           
-          <h1 className="text-4xl md:text-5xl font-extrabold font-heading tracking-tight text-black leading-tight">
+          <h1 className="text-4xl md:text-5xl font-extrabold font-heading tracking-tight text-white leading-tight">
             {t.heading1} <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
               {t.heading2}
@@ -740,13 +740,13 @@ export default function NewsFeed() {
 
         {/* Search Bar */}
         <div className="mb-12 relative max-w-xl mx-auto">
-          <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40" />
+          <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" />
           <input 
             type="text" 
             placeholder={t.search}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.05)] rounded-full py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-body text-sm font-medium transition-all"
+            className="w-full liquid-glass placeholder:text-white/50 shadow-[0_10px_30px_rgba(0,0,0,0.05)] rounded-full py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-body text-sm font-medium transition-all"
           />
         </div>
 
@@ -755,9 +755,9 @@ export default function NewsFeed() {
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 3, ease: "linear", repeat: Infinity }}
-              className="w-12 h-12 border-4 border-black/10 border-t-black rounded-full"
+              className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full"
             />
-            <p className="font-mono text-xs uppercase tracking-widest text-black/40 font-bold animate-pulse">
+            <p className="font-mono text-xs uppercase tracking-widest text-white/40 font-bold animate-pulse">
               {t.connecting}
             </p>
           </div>
@@ -770,11 +770,11 @@ export default function NewsFeed() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="col-span-full py-20 text-center"
                 >
-                  <div className="w-20 h-20 bg-black/5 rounded-3xl mx-auto flex items-center justify-center mb-6">
-                    <Brain size={32} className="text-black/30" />
+                  <div className="w-20 h-20 bg-white/10 rounded-3xl mx-auto flex items-center justify-center mb-6">
+                    <Brain size={32} className="text-white/30" />
                   </div>
                   <h3 className="text-xl font-bold mb-2">{t.empty_title}</h3>
-                  <p className="text-black/50 text-sm">{t.empty_desc}</p>
+                  <p className="text-white/50 text-sm">{t.empty_desc}</p>
                 </motion.div>
               ) : (
                 filteredPosts.map((post, index) => (
