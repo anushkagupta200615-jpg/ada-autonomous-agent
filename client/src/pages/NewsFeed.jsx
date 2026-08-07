@@ -580,8 +580,87 @@ export default function NewsFeed() {
     ? 'from-blue-100 via-slate-100 to-indigo-50'
     : 'from-gray-100 via-slate-50 to-white';
 
+  const videoRef = useRef(null);
+  const fadeRef = useRef(0);
+  const fadingOutRef = useRef(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let opacity = 0;
+    video.style.opacity = '0';
+
+    const fade = (target, duration, callback) => {
+      cancelAnimationFrame(fadeRef.current);
+      const startOpacity = parseFloat(video.style.opacity || '0');
+      const startTime = performance.now();
+
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        opacity = startOpacity + (target - startOpacity) * progress;
+        video.style.opacity = opacity.toString();
+
+        if (progress < 1) {
+          fadeRef.current = requestAnimationFrame(animate);
+        } else if (callback) {
+          callback();
+        }
+      };
+      fadeRef.current = requestAnimationFrame(animate);
+    };
+
+    const handleLoadedData = () => {
+      video.play().catch(() => {});
+      fade(1, 500);
+    };
+
+    const handleTimeUpdate = () => {
+      if (fadingOutRef.current) return;
+      if (video.duration - video.currentTime <= 0.55) {
+        fadingOutRef.current = true;
+        fade(0, 500);
+      }
+    };
+
+    const handleEnded = () => {
+      video.style.opacity = '0';
+      setTimeout(() => {
+        video.currentTime = 0;
+        fadingOutRef.current = false;
+        video.play().catch(() => {});
+        fade(1, 500);
+      }, 100);
+    };
+
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
+    if (video.readyState >= 2) handleLoadedData();
+
+    return () => {
+      cancelAnimationFrame(fadeRef.current);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+    };
+  }, []);
+
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${bgMood} transition-colors duration-1000 text-black font-body font-medium`}>
+    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 text-black font-body font-medium`}>
+      {/* Background Video */}
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
+      />
+      {/* White Overlay to make background white but keep animation visible */}
+      <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] z-0" />
+      
+      <div className="relative z-10">
       
       {/* Toast Notification */}
       <AnimatePresence>
@@ -705,6 +784,7 @@ export default function NewsFeed() {
             </AnimatePresence>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
