@@ -588,19 +588,23 @@ export default function NewsFeed() {
     const video = videoRef.current;
     if (!video) return;
 
-    let opacity = 0;
-    video.style.opacity = '0';
+    if (video.readyState < 2) {
+      video.style.opacity = '0';
+    } else {
+      video.style.opacity = '1';
+    }
 
     const fade = (target, duration, callback) => {
       cancelAnimationFrame(fadeRef.current);
-      const startOpacity = parseFloat(video.style.opacity || '0');
-      const startTime = performance.now();
+      const startOpacity = parseFloat(video.style.opacity || getComputedStyle(video).opacity || '0');
+      let startTime = null;
 
       const animate = (currentTime) => {
+        if (!startTime) startTime = currentTime;
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        opacity = startOpacity + (target - startOpacity) * progress;
-        video.style.opacity = opacity.toString();
+        
+        video.style.opacity = (startOpacity + (target - startOpacity) * progress).toString();
 
         if (progress < 1) {
           fadeRef.current = requestAnimationFrame(animate);
@@ -637,7 +641,9 @@ export default function NewsFeed() {
     video.addEventListener('loadeddata', handleLoadedData);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
-    if (video.readyState >= 2) handleLoadedData();
+    if (video.readyState >= 2) {
+      handleLoadedData();
+    }
 
     return () => {
       cancelAnimationFrame(fadeRef.current);
