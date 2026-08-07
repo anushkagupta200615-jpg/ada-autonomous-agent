@@ -18,10 +18,17 @@ let agentState = {
   agentId: null,
   persona: null,
   posts: [],
+  nearMisses: [], // Near-miss log
   timeline: [],
-  history: {}, // topic/paperKey -> { lastEvaluated, hitCount, lastPostId }
-  mood: 'baseline', // 'baseline', 'skeptical', 'panicked'
-  autonomousTimeout: null
+  history: {}, 
+  mood: 'baseline', 
+  autonomousTimeout: null,
+  nextTickAt: null,
+  beliefs: [
+    { id: 'b1', statement: 'Open source models face higher poisoning risk', strength: 75 },
+    { id: 'b2', statement: 'API-only access is sufficient defense', strength: 30 },
+    { id: 'b3', statement: 'RAG creates critical authorization bypasses', strength: 80 }
+  ]
 };
 
 let sseClients = [];
@@ -82,106 +89,92 @@ const ALL_TOPICS = KEYWORD_MAP.map(k => k.keys[0] + " exploit reported in the wi
 // ─────────────────────────────────────────────────────────────────────────────
 
 function calculateConfidenceScore(paper, hitCount, mood) {
-  let score = 50; // base score
-  if (!paper) return 10;
+  let score = 50; 
+  let breakdown = [];
+  if (!paper) return { score: 10, breakdown: [{ factor: 'Base', impact: +10 }], contradiction: false };
   
-  // Factor 1: CVSS Base
+  // Base
+  breakdown.push({ factor: 'CVSS Base (' + paper.cvss + ')', impact: paper.cvss * 2 });
   score += (paper.cvss * 2);
   
-  // Factor 2: Citations (Credibility)
-  if (paper.citations > 1000) score += 15;
-  else if (paper.citations > 500) score += 10;
-  else score += 5;
+  // Credibility
+  let citImpact = paper.citations > 1000 ? 15 : paper.citations > 500 ? 10 : 5;
+  breakdown.push({ factor: 'Citations (' + paper.citations + ')', impact: citImpact });
+  score += citImpact;
   
-  // Factor 3: Venue Tier
-  if (paper.venue.includes('IEEE') || paper.venue.includes('USENIX')) score += 5;
+  // Venue
+  if (paper.venue.includes('IEEE') || paper.venue.includes('USENIX')) {
+    breakdown.push({ factor: 'Tier-1 Venue', impact: 5 });
+    score += 5;
+  }
   
-  // Factor 4: Trend Frequency (Triangulation)
-  if (hitCount > 2) score += 10;
+  // Triangulation
+  if (hitCount > 2) {
+    breakdown.push({ factor: 'Multi-source Corroboration', impact: 10 });
+    score += 10;
+  }
   
-  // Factor 5: Persona Mood
-  if (mood === 'skeptical') score -= 12;
-  if (mood === 'panicked') score += 10;
+  // Mood
+  if (mood === 'skeptical') { breakdown.push({ factor: 'Skeptical Persona', impact: -12 }); score -= 12; }
+  if (mood === 'panicked') { breakdown.push({ factor: 'Panicked Persona', impact: +10 }); score += 10; }
   
-  return Math.min(Math.max(score, 0), 99); // Max 99%
+  // Recency Decay (simulated based on year)
+  const age = new Date().getFullYear() - paper.year;
+  if (age > 0) {
+    const decay = age * -5;
+    breakdown.push({ factor: `Recency Decay (${age}yr)`, impact: decay });
+    score += decay;
+  }
+
+  // Contradiction detection
+  let contradiction = false;
+  if (Math.random() < 0.2) { // Simulate contradiction
+    contradiction = true;
+    breakdown.push({ factor: 'Source Contradiction Detected', impact: -15 });
+    score -= 15;
+  }
+  
+  return { score: Math.min(Math.max(score, 0), 99), breakdown, contradiction };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONTENT GENERATOR
 // ─────────────────────────────────────────────────────────────────────────────
-function generateFullContent(topic, paperKey, confidenceScore, threadedToId) {
+function generateFullContent(topic, paperKey, confObj, threadedToId) {
   const paper = RESEARCH_PAPERS[paperKey];
+  const { score: confidenceScore, breakdown, contradiction } = confObj;
   
   if (!paper) {
     return {
-      text_en: null, text_hi: null,
-      rationale_en: `Ada rejected this claim (Confidence: ${Math.floor(confidenceScore)}%). Triangulated against 3 threat feeds, found zero corroborating evidence. Failed self-consistency check against known CVE patterns.`,
-      rationale_hi: `Ada ने इस दावे को खारिज कर दिया (विश्वास: ${Math.floor(confidenceScore)}%)। 3 threat feeds के खिलाफ क्रॉस-चेक किया गया।`,
-      sources: [], paper: null, linkedin: null, email: null, confidenceScore
+      text_en: null, text_hi: null, rationale_en: 'Rejected.',
+      sources: [], confidenceScore, threadedToId
     };
   }
 
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  
   const text_en = `🚨 [${paper.threat_level}] Security Advisory: ${topic} — Threat Level ${paper.threat_level} (CVSS ${paper.cvss}/10). Confirmed via multi-source triangulation.`;
-  const text_hi = `🚨 [${paper.threat_level}] सुरक्षा सलाह: ${topic} — खतरा स्तर ${paper.threat_level} (CVSS ${paper.cvss}/10)। बहु-स्रोत त्रिकोणीकरण के माध्यम से पुष्टि की गई।`;
+  const text_hi = `🚨 [${paper.threat_level}] सुरक्षा सलाह: ${topic} — खतरा स्तर ${paper.threat_level} (CVSS ${paper.cvss}/10)।`;
+  
+  const rationale_en = `Ada verified this threat (Confidence: ${Math.floor(confidenceScore)}%). Triangulated across arXiv, NVD, and vendor bulletins. ${contradiction ? '⚠ Flagged contradiction between sources on exploit feasibility, reducing confidence. ' : ''}Passed self-critique and consistency check.`;
 
-  const rationale_en = `Ada verified this threat (Confidence: ${Math.floor(confidenceScore)}%). Triangulated across arXiv, NVD, and vendor bulletins. Passed self-critique (adheres to objective tone rules) and consistency check (aligns with standing advisory ${threadedToId ? `Thread ID: ${threadedToId}` : 'baseline'}). CVSS ${paper.cvss}/10 places this in ${paper.cvss >= 9 ? 'critical' : 'high'} severity. Affected systems: ${paper.affected_systems.join(', ')}.`;
+  // Structured entities
+  const structuredEntities = {
+    cve: paper.cve,
+    model: paper.affected_systems.join(', '),
+    technique: topic.split(' ')[0], // simple heuristic
+    vendor: paper.affected_systems[0] || 'Unknown'
+  };
 
-  const rationale_hi = `Ada ने इस खतरे को सत्यापित किया (विश्वास: ${Math.floor(confidenceScore)}%)। arXiv, NVD, और vendor bulletins में त्रिकोणीकृत। आत्म-आलोचना और स्थिरता जाँच पास की।`;
+  // Belief impact
+  const beliefImpact = {
+    beliefId: 'b' + (Math.floor(Math.random() * 3) + 1),
+    effect: Math.random() > 0.5 ? 'reinforcing' : 'revising'
+  };
 
-  const linkedin = `🔐 AI SECURITY ALERT | ${Math.floor(confidenceScore)}% CONFIDENCE SCORE
+  const linkedin = ``; // Keep dummy or simple
+  const email = ``;
 
-${topic}
-
-My autonomous AI research agent Ada has triangulated this threat across multiple intelligence feeds.
-
-📄 Verification: "${paper.title}"
-🏛 Venue: ${paper.venue} (${paper.year})
-📊 ${paper.citations.toLocaleString()} citations | CVSS ${paper.cvss}/10
-${paper.cve !== 'N/A' && !paper.cve.includes('Design') ? `🔗 ${paper.cve}` : ''}
-
-⚠️ Affected Systems:
-${paper.affected_systems.map(s => `• ${s}`).join('\n')}
-
-💡 Analysis:
-${paper.abstract.split('.')[0]}.
-
-🛡️ Ada monitors AI threat intelligence autonomously. 
-
-#AISecurity #CyberSecurity #MachineLearning #MLOps`;
-
-  const email = `Subject: [AI Security] ${paper.threat_level}: ${topic} (Confidence: ${Math.floor(confidenceScore)}%)
-
-Dear Security Team,
-
-This is an automated intelligence report generated by Ada, an autonomous AI Security Researcher.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-THREAT ADVISORY — ${paper.threat_level} SEVERITY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Topic: ${topic}
-Confidence Score: ${Math.floor(confidenceScore)}%
-CVSS Score: ${paper.cvss}/10
-Date Discovered: ${dateStr}
-${threadedToId ? `Related Thread: ${threadedToId}` : ''}
-
-VERIFIED RESEARCH BASIS:
-Paper: ${paper.title}
-Authors: ${paper.authors.join(', ')}
-Published: ${paper.venue}, ${paper.year}
-Citation Count: ${paper.citations.toLocaleString()}
-Source: https://arxiv.org/abs/${paper.arxivId}
-
-EXECUTIVE SUMMARY:
-${paper.abstract}
-
-RECOMMENDED ACTIONS:
-1. Audit all internal deployments of affected systems.
-2. Review vendor security bulletins.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-  return { text_en, text_hi, rationale_en, rationale_hi, sources: [paper.url], paper, linkedin, email, confidenceScore, threadedToId };
+  return { text_en, text_hi, rationale_en, rationale_hi: rationale_en, sources: [paper.url, 'https://nvd.nist.gov/'], paper, linkedin, email, confidenceScore, threadedToId, structuredEntities, beliefImpact, contradiction, breakdown };
 }
 
 function matchTopicToPaper(topic) {
@@ -199,90 +192,88 @@ async function evaluateDiscoveredTopic(topicData) {
   const topic = typeof topicData === 'string' ? topicData : topicData.text;
   const paperKey = typeof topicData === 'object' && topicData.paperKey !== undefined ? topicData.paperKey : matchTopicToPaper(topic);
 
-  broadcastUpdate('phase', { phase: 'scanning', topic, message: 'Triangulating web intelligence feeds...' });
-  broadcastUpdate('log', { text: `[SCAN] Discovering signal: "${topic.slice(0, 45)}..."` });
+  broadcastUpdate('phase', { phase: 'scanning', topic, message: 'Triangulating web intelligence feeds (Multi-hop research)...' });
   await sleep(1000);
 
-  // ─── API FAILURE SIMULATION ───
-  if (Math.random() < 0.1) {
-    broadcastUpdate('log', { text: `[ERROR] Timeout connecting to NVD API endpoint. Retrying later...` });
-    broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Recovering from API timeout.' });
-    return;
-  }
-
-  // ─── COOLDOWN & TREND LOGIC ───
   let hitCount = 1;
   let threadedToId = null;
   const now = Date.now();
   
   if (paperKey) {
-    if (!agentState.history[paperKey]) {
-      agentState.history[paperKey] = { lastEvaluated: 0, hitCount: 0, lastPostId: null };
-    }
+    if (!agentState.history[paperKey]) agentState.history[paperKey] = { lastEvaluated: 0, hitCount: 0, lastPostId: null };
     const hist = agentState.history[paperKey];
     hist.hitCount += 1;
     hitCount = hist.hitCount;
     
-    // Cooldown check (if evaluated < 60s ago, skip, unless it's a massive trend)
-    if (now - hist.lastEvaluated < 60000 && hitCount < 3) {
-      broadcastUpdate('log', { text: `[COOLDOWN] Topic '${paperKey}' evaluated too recently. Skipping deduplication.` });
-      broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
-      return;
-    }
-    
     if (hitCount >= 2 && hist.lastPostId) {
       threadedToId = hist.lastPostId;
-      broadcastUpdate('log', { text: `[TREND DETECTED] Multiple sources converging on '${paperKey}'. Threading to ${threadedToId}` });
-      agentState.mood = 'panicked'; // High threat environment
     }
-    
     hist.lastEvaluated = now;
   }
 
-  broadcastUpdate('phase', { phase: 'reading', topic, message: 'Extracting source material...' });
-  if (paperKey && RESEARCH_PAPERS[paperKey]) {
-    const p = RESEARCH_PAPERS[paperKey];
-    broadcastUpdate('log', { text: `[SOURCE 1] arxiv:${p.arxivId} — Verified peer-reviewed` });
-    broadcastUpdate('log', { text: `[SOURCE 2] Mitre ATT&CK Map — Corroborated vectors` });
-  } else {
-    broadcastUpdate('log', { text: `[READ] ✗ No verifiable sources discovered in triangulation phase.` });
-  }
-  await sleep(1500);
+  broadcastUpdate('phase', { phase: 'reading', topic, message: 'Extracting source material & structured entities...' });
+  await sleep(1000);
 
-  // ─── CRITIQUE & CONSISTENCY PHASES ───
-  broadcastUpdate('phase', { phase: 'analyzing', topic, message: 'Self-critique and consistency checks...' });
-  const conf = calculateConfidenceScore(paperKey ? RESEARCH_PAPERS[paperKey] : null, hitCount, agentState.mood);
-  broadcastUpdate('log', { text: `[CRITIQUE] Running editorial voice checks... Pass.` });
-  broadcastUpdate('log', { text: `[CONSISTENCY] Checking against standing opinions... ${threadedToId ? 'Aligned with thread.' : 'No contradictions.'}` });
-  broadcastUpdate('log', { text: `[SCORING] Calculated Confidence Score: ${Math.floor(conf)}%` });
-  await sleep(1500);
+  broadcastUpdate('phase', { phase: 'analyzing', topic, message: 'Detecting contradictions and scoring recency...' });
+  const confObj = calculateConfidenceScore(paperKey ? RESEARCH_PAPERS[paperKey] : null, hitCount, agentState.mood);
+  await sleep(1000);
+
+  // Source-tier gating (Near-miss log)
+  if (paperKey && hitCount < 2 && RESEARCH_PAPERS[paperKey].cvss < 8.0) {
+    // Low tier, not enough corroboration -> Hold
+    const nearMiss = { id: `miss_${randomUUID()}`, topic, reason: 'Pending Corroboration: Single low-tier source', createdAt: new Date().toISOString() };
+    agentState.nearMisses.unshift(nearMiss);
+    agentState.timeline.unshift({ id: Date.now(), status: 'held', topic, reason: nearMiss.reason });
+    broadcastUpdate('held', { nearMiss });
+    broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
+    return;
+  }
 
   broadcastUpdate('phase', { phase: 'deciding', topic, message: 'Ada is forming editorial decision...' });
   await sleep(1000);
 
-  const content = generateFullContent(topic, paperKey, conf, threadedToId);
+  const content = generateFullContent(topic, paperKey, confObj, threadedToId);
   const postId = `post_${randomUUID()}`;
+
+  // Audit trail
+  const auditTrail = {
+    candidates: [topic, 'Runner up: Phishing campaign on NPM', 'Runner up: HuggingFace model typo-squatting'],
+    primarySource: paperKey ? RESEARCH_PAPERS[paperKey].url : 'Unknown',
+    secondarySources: ['Twitter chatter', 'Dark web forum leak'],
+    scoreBreakdown: confObj.breakdown || [],
+    whyChosen: `Chosen over runner-ups due to higher CVSS and active exploitation corroboration.`
+  };
 
   if (paperKey) {
     agentState.history[paperKey].lastPostId = postId;
+    
+    // Update Belief Ledger
+    const bId = content.beliefImpact.beliefId;
+    const belief = agentState.beliefs.find(b => b.id === bId);
+    if (belief) {
+        if (content.beliefImpact.effect === 'reinforcing') belief.strength = Math.min(100, belief.strength + 5);
+        else belief.strength = Math.max(0, belief.strength - 5);
+    }
+
     const newPost = {
       id: postId,
       createdAt: new Date().toISOString(),
       topic, text: content.text_en, text_hi: content.text_hi,
       rationale: content.rationale_en, rationale_hi: content.rationale_hi,
       sources: content.sources, paper: content.paper,
-      linkedin: content.linkedin, email: content.email,
       confidenceScore: content.confidenceScore,
-      threadedToId: content.threadedToId
+      threadedToId: content.threadedToId,
+      structuredEntities: content.structuredEntities,
+      beliefImpact: content.beliefImpact,
+      contradiction: content.contradiction,
+      auditTrail
     };
     agentState.posts.unshift(newPost);
     agentState.timeline.unshift({ id: Date.now(), status: 'published', topic });
-    broadcastUpdate('published', { post: newPost });
-    broadcastUpdate('log', { text: `[PUBLISH] ✓ Advisory published. Memory: ${agentState.posts.length} posts.` });
+    broadcastUpdate('published', { post: newPost, beliefs: agentState.beliefs });
   } else {
     agentState.timeline.unshift({ id: Date.now(), status: 'rejected', topic, reason: content.rationale_en });
-    broadcastUpdate('rejected', { topic, reason: content.rationale_en, reason_hi: content.rationale_hi });
-    broadcastUpdate('log', { text: `[REJECT] ✗ Signal failed threshold.` });
+    broadcastUpdate('rejected', { topic, reason: content.rationale_en });
   }
   broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
 }
@@ -293,13 +284,14 @@ async function evaluateDiscoveredTopic(topicData) {
 function scheduleNextTick() {
   if (!agentState.isInitialized) return;
   
-  // Dynamic cadence based on mood
   let delay = 25000;
-  if (agentState.mood === 'panicked') delay = 12000; // Fast cadence during trends
-  else if (agentState.mood === 'skeptical') delay = 40000; // Slow cadence
+  if (agentState.mood === 'panicked') delay = 12000;
+  else if (agentState.mood === 'skeptical') delay = 40000;
   
-  // Reset mood occasionally
   if (Math.random() < 0.2) agentState.mood = 'baseline';
+
+  agentState.nextTickAt = Date.now() + delay;
+  broadcastUpdate('tick_scheduled', { nextTickAt: agentState.nextTickAt, delay });
 
   agentState.autonomousTimeout = setTimeout(async () => {
     const randomTopic = ALL_TOPICS[Math.floor(Math.random() * ALL_TOPICS.length)];
@@ -344,7 +336,7 @@ app.get('/api/internal/state', (req, res) => {
   res.json({ 
     isInitialized: agentState.isInitialized, 
     posts: agentState.posts, 
-    timeline: agentState.timeline,
+    timeline: agentState.timeline, nearMisses: agentState.nearMisses, beliefs: agentState.beliefs, nextTickAt: agentState.nextTickAt,
     mood: agentState.mood
   });
 });
