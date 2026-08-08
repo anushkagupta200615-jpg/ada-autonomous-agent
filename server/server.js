@@ -182,12 +182,14 @@ async function evaluateDiscoveredTopic(topicData) {
       };
     }
 
-    // Topic Relevance Filter
-    const AI_SECURITY_KEYWORDS = ['llm', 'model', 'prompt', 'exploit', 'cve', 'agent', 'rag', 'poison', 'jailbreak', 'security', 'ransomware', 'malware', 'cyber', 'hacker', 'breach', 'vulnerability', 'attack', 'patch', 'data'];
-    const isRelevant = AI_SECURITY_KEYWORDS.some(k => topic.toLowerCase().includes(k));
+    const paper = paperKey ? RESEARCH_PAPERS[paperKey] : null;
+    const sources = paper ? [paper.url, 'https://nvd.nist.gov/'] : [];
+
+    // Topic Relevance Filter - DISABLED FOR HACKATHON DEMO
+    const isRelevant = true;
     if (!isRelevant) {
        db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('rejected', topic, 'Off-topic: Not mapped to core AI-security domain.');
-       broadcastUpdate('rejected', { topic, reason: 'Off-topic: Not mapped to core AI-security domain.' });
+       broadcastUpdate('rejected', { topic, reason: 'Off-topic: Not mapped to core AI-security domain.', sources });
        broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
        return;
     }
@@ -235,7 +237,7 @@ async function evaluateDiscoveredTopic(topicData) {
       db.prepare('INSERT INTO rejections (id, createdAt, status, topic, reason, auditTrail, scoreBreakdown) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .run(rejectedId, new Date().toISOString(), 'rejected', topic, reason, JSON.stringify({}), JSON.stringify(confObj.breakdown));
       db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('rejected', topic, 'Failed Self-Critique');
-      broadcastUpdate('rejected', { topic, reason });
+      broadcastUpdate('rejected', { topic, reason, sources });
       broadcastUpdate('phase', { phase: 'idle', topic, message: 'Draft discarded in self-critique pass.' });
       return;
   }
@@ -268,8 +270,8 @@ async function evaluateDiscoveredTopic(topicData) {
     db.prepare('INSERT INTO rejections (id, createdAt, status, topic, reason, auditTrail, scoreBreakdown) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .run(heldId, new Date().toISOString(), 'held', topic, reason, JSON.stringify({}), JSON.stringify(confObj.breakdown));
     db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('held', topic, 'Cadence Throttling');
-    broadcastUpdate('held', { nearMiss: { id: heldId, topic, reason, createdAt: new Date().toISOString() } });
-    broadcastUpdate('rejected', { topic, reason });
+    broadcastUpdate('held', { nearMiss: { id: heldId, topic, reason, createdAt: new Date().toISOString() }, sources });
+    broadcastUpdate('rejected', { topic, reason, sources });
     broadcastUpdate('log', { text: `[HELD] ✗ ${reason}` });
     broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
     return;
@@ -352,7 +354,7 @@ async function evaluateDiscoveredTopic(topicData) {
     }
   } else {
     db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('rejected', topic, content.rationale_en);
-    broadcastUpdate('rejected', { topic, reason: content.rationale_en });
+    broadcastUpdate('rejected', { topic, reason: content.rationale_en, sources: content.sources });
   }
   broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
   } catch (err) {

@@ -144,7 +144,7 @@ function ResultModal({ result, onClose }) {
                 {result.rationale || result.reason}
               </motion.p>
 
-              {isPublished && result.sources?.length > 0 && (
+              {result.sources?.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
