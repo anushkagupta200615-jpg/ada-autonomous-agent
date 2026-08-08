@@ -496,12 +496,32 @@ export default function AgentDashboard() {
             ← Main Menu
           </button>
           
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="text-6xl md:text-7xl font-heading font-black tracking-tighter leading-[0.85] text-black">
-            Ada.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-br from-black/70 to-black/30">Sovereign.</span><br />
-            <span className="text-black/20">Unyielding.</span>
-          </motion.h1>
+          <div className="flex items-start gap-6">
+              <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="text-6xl md:text-7xl font-heading font-black tracking-tighter leading-[0.85] text-black">
+                Ada.<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-br from-black/70 to-black/30">Sovereign.</span><br />
+                <span className="text-black/20">Unyielding.</span>
+              </motion.h1>
+              
+              {/* Heartbeat Pulse */}
+              {isInitialized && (
+                <div className="mt-4 flex flex-col items-center">
+                    <motion.div 
+                        animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
+                        transition={{ 
+                            duration: currentPhase === 'deciding' ? 0.2 : (currentPhase === 'idle' ? 1.5 : 0.6), 
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                        className={`w-4 h-4 rounded-full ${currentPhase === 'deciding' ? 'bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.9)]' : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]'}`}
+                    />
+                    <span className="text-[9px] font-mono mt-1 text-black/40 font-bold uppercase tracking-widest">
+                        {currentPhase === 'deciding' ? 'Peak' : 'Nominal'}
+                    </span>
+                </div>
+              )}
+          </div>
 
           <div className="mt-10">
             {!isInitialized ? (
