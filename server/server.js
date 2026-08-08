@@ -79,17 +79,21 @@ const parser = new Parser();
 let ALL_TOPICS = KEYWORD_MAP.map(k => k.keys[0] + " exploit reported in the wild");
 let LIVE_TOPICS = [];
 
-async function updateLiveTopics() {
+const fetchRss = async () => {
   try {
     const feed = await parser.parseURL('https://feeds.feedburner.com/TheHackersNews');
-    LIVE_TOPICS = feed.items.map(item => item.title);
+    const items = feed.items.slice(0, 10).map(item => item.title);
+    LIVE_TOPICS = items;
+    console.log("Fetched " + LIVE_TOPICS.length + " live RSS topics.");
   } catch (err) {
-    console.error("Failed to fetch RSS feed:", err);
+    console.error("RSS Fetch failed:", err.message);
   }
-}
-// Start pulling RSS every 10 mins
-updateLiveTopics();
-setInterval(updateLiveTopics, 600000);
+};
+
+// Fetch immediately on boot
+fetchRss();
+
+setInterval(fetchRss, 600000);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ALGORITHMS (Confidence, Trends, Cooldowns)
@@ -173,7 +177,7 @@ async function evaluateDiscoveredTopic(topicData) {
         title: topic,
         cve: `CVE-${new Date().getFullYear()}-${Math.floor(Math.random()*10000)}`,
         year: new Date().getFullYear(),
-        cvss: (Math.random() * 4 + 6).toFixed(1), // 6.0 to 10.0
+        cvss: parseFloat((Math.random() * 4 + 6).toFixed(1)), // Ensure it's a number, 6.0 to 10.0
         affected_systems: ['Enterprise Infrastructure', 'Cloud Endpoints'],
         threat_level: 'CRITICAL',
         primary_source: 'The Hacker News Live RSS',
@@ -243,7 +247,7 @@ async function evaluateDiscoveredTopic(topicData) {
   }
 
   // Source-tier gating / Held State
-  if (paperKey && hitCount < 2 && (RESEARCH_PAPERS[paperKey].tier >= 3 || RESEARCH_PAPERS[paperKey].cvss < 8.0)) {
+  if (paperKey && hitCount < 2 && (RESEARCH_PAPERS[paperKey].tier >= 3 || parseFloat(RESEARCH_PAPERS[paperKey].cvss) < 8.0)) {
     // Low tier or low severity without corroboration -> Held
     const heldId = `held_${randomUUID()}`;
     const reason = RESEARCH_PAPERS[paperKey].tier >= 3 ? 'Pending Corroboration: Single Tier-3 source' : 'Pending Corroboration: Low severity';
