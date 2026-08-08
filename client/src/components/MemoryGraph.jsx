@@ -62,12 +62,7 @@ export default function MemoryGraph({ posts }) {
     setGraphData({ nodes, links });
   }, [posts]);
 
-  useEffect(() => {
-    if (graphRef.current) {
-      // Auto-zoom to fit nodes
-      graphRef.current.zoomToFit(400);
-    }
-  }, [graphData]);
+  // We will handle zoomToFit onEngineStop instead of immediately
 
   return (
     <div className="w-full h-full rounded-xl overflow-hidden bg-black/40 border border-[#00FF41]/20 relative">
@@ -102,6 +97,11 @@ export default function MemoryGraph({ posts }) {
         linkDirectionalParticles={2}
         linkDirectionalParticleSpeed={0.01}
         backgroundColor="rgba(0,0,0,0)"
+        onEngineStop={() => {
+          if (graphRef.current) {
+            graphRef.current.zoomToFit(400);
+          }
+        }}
       />
     </div>
   );
