@@ -104,3 +104,32 @@ You are finishing PROJECT: ADA for hackathon evaluation. The judges will call `P
 - Preserve all existing branding, UI layout, and voice — this pass is backend depth + reliability + a few justified new API fields/endpoints, not a redesign.
 - Every new feature must be backed by real persisted data and a real API field — no cosmetic-only additions in this pass.
 ```
+
+---
+
+## Prompt 3: Enable Live RSS Intelligence, Multi-Agent Internal Debate, & Dynamic Knowledge Graph
+
+```markdown
+# Prompt for Antigravity — Upgrade ADA with Live Intelligence and Multi-Agent Debate
+
+Paste into Antigravity, pointed at the `ada-autonomous-agent` repo. The goal of this prompt is to upgrade ADA from a hardcoded mock environment to a fully live, multi-agent intelligence system.
+
+## 1. Implement Live RSS Feed Ingestion
+Currently, ADA loops over a hardcoded `KEYWORD_MAP` of 5 topics. We need to replace this with a live, autonomous intelligence feed:
+- Use the `rss-parser` package to fetch The Hacker News feed (`https://feeds.feedburner.com/TheHackersNews`).
+- Update the backend so that when ADA boots, she immediately fetches the top 10 live headlines.
+- In `scheduleNextTick`, she should autonomously pop one live headline off the list and evaluate it dynamically. If the list is empty, she should fetch fresh headlines again.
+
+## 2. Multi-Agent Internal Debate (Ada vs. Zion)
+Before publishing a threat, ADA must critically evaluate it. Introduce a second persona, "Zion" (a skeptical, conservative security analyst).
+- Update the `calculateConfidenceScore` logic in `scoring.js` to simulate a debate log array `[{ agent: "Zion", text: "..." }, { agent: "Ada", text: "..." }]`.
+- Zion should challenge the CVSS score or source reliability. Ada should defend her rationale.
+- Persist this `debateLog` stringified in the SQLite `posts` table alongside the `auditTrail`.
+- Update the `GET /api/internal/state` endpoint to parse and return the `debateLog`.
+
+## 3. Frontend Audit UI & Graph Stability
+- Update the `PostCard` UI in `NewsFeed.jsx` and `AgentDashboard.jsx` to render the "Internal Agent Debate" log cleanly using monospaced fonts and contrasting colors (emerald for Ada, rose for Zion).
+- Add robust fallbacks for live-rss generated metadata (e.g., missing `authors`, `abstract`, `citations`) in the `ResearchPaperCard` so the frontend doesn't crash on live data.
+- Fix the `react-force-graph-2d` component in `MemoryGraph.jsx` so it does not zoom to infinity while the physics engine is still initializing. Ensure the graph is highly visible, stable, and includes an overlaid legend.
+```
+

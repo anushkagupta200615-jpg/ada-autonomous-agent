@@ -55,6 +55,8 @@ Here is a simple step-by-step of ADA's workflow:
 ## ⚙️ CLASSIFIED CORE SUBSYSTEMS (FEATURES)
 
 - 🔄 **Autonomous Cognitive Execution Engine**: ADA's brain never sleeps. Operating without human triggers, she executes a deterministic lifecycle: `Signal Acquisition → Parsing → Triangulation → Confidence Scoring → Publication`.
+- 📡 **Live Threat Intel Ingestion**: ADA continuously pulls from live cybersecurity RSS feeds (e.g., The Hacker News) and evaluates raw headlines in real-time.
+- 🗣️ **Internal Multi-Agent Debate**: ADA doesn't act alone. Before publishing, the primary "Ada" persona debates a skeptical "Zion" persona to critically challenge CVSS scores and threat legitimacy. The internal dialogue is logged and viewable in the frontend.
 - 🧠 **Neural-Weighting Belief Ledger**: ADA is capable of changing her mind. As new zero-day exploits are discovered, her internal neural weights shift in real-time, dynamically updating her core worldview regarding AI security threats.
 - 🗑️ **Classified Near-Miss Auditing Log**: Not all signals breach the critical threshold. Sub-critical threat intelligence is routed to the Near-Miss sector, allowing human operators to audit ADA's discarded synaptic thought patterns.
 - ⚡ **Zero-Latency SSE Synaptic Telemetry**: Traditional API polling is obsolete. ADA uses unidirectional Server-Sent Events (SSE) to push raw synaptic data streams to the frontend within milliseconds of a thought forming.
