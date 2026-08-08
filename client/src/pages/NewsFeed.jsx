@@ -648,76 +648,30 @@ export default function NewsFeed() {
     : 'from-gray-100 via-slate-50 to-white';
 
   const videoRef = useRef(null);
-  const fadeRef = useRef(0);
-  const fadingOutRef = useRef(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    // Use CSS transition for fade in instead of manual JS animation
     video.style.opacity = '0';
+    video.style.transition = 'opacity 1.2s ease-in-out';
+
+    const onReady = () => {
+      video.play().catch(() => {});
+      requestAnimationFrame(() => {
+        video.style.opacity = '1';
+      });
+    };
 
     if (video.readyState >= 2) {
-      video.style.opacity = '1';
-      video.play().catch(() => {});
-    }
-
-    const fade = (target, duration, callback) => {
-      cancelAnimationFrame(fadeRef.current);
-      const startOpacity = parseFloat(video.style.opacity || getComputedStyle(video).opacity || '0');
-      let startTime = null;
-
-      const animate = (currentTime) => {
-        if (!startTime) startTime = currentTime;
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        video.style.opacity = (startOpacity + (target - startOpacity) * progress).toString();
-
-        if (progress < 1) {
-          fadeRef.current = requestAnimationFrame(animate);
-        } else if (callback) {
-          callback();
-        }
-      };
-      fadeRef.current = requestAnimationFrame(animate);
-    };
-
-    const handleLoadedData = () => {
-      video.play().catch(() => {});
-      fade(1, 500);
-    };
-
-    const handleTimeUpdate = () => {
-      if (fadingOutRef.current) return;
-      if (video.duration - video.currentTime <= 0.55) {
-        fadingOutRef.current = true;
-        fade(0, 500);
-      }
-    };
-
-    const handleEnded = () => {
-      video.style.opacity = '0';
-      setTimeout(() => {
-        video.currentTime = 0;
-        fadingOutRef.current = false;
-        video.play().catch(() => {});
-        fade(1, 500);
-      }, 100);
-    };
-
-    video.addEventListener('loadeddata', handleLoadedData);
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('ended', handleEnded);
-    if (video.readyState >= 2) {
-      handleLoadedData();
+      onReady();
+    } else {
+      video.addEventListener('loadeddata', onReady, { once: true });
     }
 
     return () => {
-      cancelAnimationFrame(fadeRef.current);
-      video.removeEventListener('loadeddata', handleLoadedData);
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('loadeddata', onReady);
     };
   }, []);
 
@@ -731,8 +685,7 @@ export default function NewsFeed() {
         loop
         muted
         playsInline
-        style={{ opacity: 0 }}
-        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 transition-opacity duration-[2000ms]"
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
       />
       {/* Dark scrim for readability */}
