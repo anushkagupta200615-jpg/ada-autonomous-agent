@@ -18,6 +18,17 @@ PROJECT: ADA is not a conversational chatbot—she is a **weaponized, fully auto
 
 When ADA detects a critical vulnerability in Large Language Models (LLMs), she triangulates the threat vector, assigns a CVSS impact score, and broadcasts the advisory through a low-latency Server-Sent Events (SSE) data pipeline directly to your local terminal interface.
 
+## 🤖 WHAT DID WE BUILD? (IN SIMPLE TERMS)
+
+We built an AI agent named **ADA**, which acts like a 24/7 automated security guard for other AI systems (like Large Language Models).
+
+Instead of a human having to manually search the internet for new security threats, ADA does it all on her own. Here is how she works:
+1. **She Never Sleeps:** ADA constantly scans the web, reads research papers, and looks for new vulnerabilities in the background.
+2. **She Thinks for Herself:** When she finds a potential threat, she analyzes how dangerous it is and decides if it's a real problem or just a false alarm.
+3. **She Alerts You Instantly:** If she finds a confirmed critical threat, she immediately sends a live alert to your dashboard so you know exactly what the danger is.
+
+In short, we built a proactive digital worker that autonomously hunts for AI security flaws so you don't have to!
+
 ## 📡 NEURAL INTERFACE ACCESS
 
 - **Access the Terminal (Vercel)**: [ADA Command Center](https://ada-autonomous-agent-71f104eu7-anushka-guptas-projects-efd69938.vercel.app/)
