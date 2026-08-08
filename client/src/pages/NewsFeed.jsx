@@ -450,9 +450,11 @@ function PostCard({ post, lang, index }) {
             <span className="block text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] font-extrabold mb-3">{t.primary_sources}</span>
             <div className="flex flex-wrap gap-2">
                 <AnimatePresence>
-                    {expanded && post.sources.map((source, j) => (
+                    {expanded && post.sources.map((source, j) => {
+                      const absoluteLink = source.startsWith('http') ? source : `https://${source}`;
+                      return (
                       <motion.a 
-                        key={j} href={source} target="_blank" rel="noopener noreferrer"
+                        key={j} href={absoluteLink} target="_blank" rel="noopener noreferrer"
                         initial={{ opacity: 0, rotateX: 90, scale: 0.8 }}
                         animate={{ opacity: 1, rotateX: 0, scale: 1 }}
                         exit={{ opacity: 0, rotateX: -90, scale: 0.8 }}
@@ -463,18 +465,22 @@ function PostCard({ post, lang, index }) {
                         <span className="text-[11px] font-mono font-semibold max-w-[200px] truncate">{source.replace('https://', '')}</span>
                         <ExternalLink size={11} className="opacity-30 group-hover/link:opacity-100 flex-shrink-0 transition-opacity" />
                       </motion.a>
-                    ))}
+                      );
+                    })}
                 </AnimatePresence>
                 {/* Always show at least 1 static chip if not expanded just for visual balance, or maybe just only show on expanded. We'll only show on expanded to meet the 'staggered reveal' requirement. Wait, maybe show all statically if not expanded? No, the prompt says 'expand a card to animate rationale ... with source chips flipping in individually'. So we tie it to `expanded`. */}
-                {!expanded && post.sources.map((source, j) => (
+                {!expanded && post.sources.map((source, j) => {
+                      const absoluteLink = source.startsWith('http') ? source : `https://${source}`;
+                      return (
                       <a 
-                        key={j} href={source} target="_blank" rel="noopener noreferrer"
+                        key={j} href={absoluteLink} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-2 p-2 rounded-xl bg-white/5 opacity-50 hover:opacity-100 transition-all group/link border border-transparent flex-shrink-0"
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50 flex-shrink-0" />
                         <span className="text-[10px] font-mono max-w-[150px] truncate">{source.replace('https://', '')}</span>
                       </a>
-                ))}
+                      );
+                })}
             </div>
           </div>
         )}
