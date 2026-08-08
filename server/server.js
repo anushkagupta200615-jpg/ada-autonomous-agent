@@ -494,7 +494,7 @@ app.get('/api/agent/memory', apiLimiter, (req, res) => {
 });
 
 app.get('/api/internal/state', apiLimiter, (req, res) => {
-  const posts = db.prepare('SELECT * FROM posts ORDER BY createdAt DESC').all().map(p => ({...p, sources: JSON.parse(p.sources), paper: JSON.parse(p.paper), structuredEntities: JSON.parse(p.structuredEntities), beliefImpact: JSON.parse(p.beliefImpact), auditTrail: JSON.parse(p.auditTrail)}));
+  const posts = db.prepare('SELECT * FROM posts ORDER BY createdAt DESC').all().map(p => ({...p, sources: JSON.parse(p.sources), paper: JSON.parse(p.paper), structuredEntities: JSON.parse(p.structuredEntities), beliefImpact: JSON.parse(p.beliefImpact), auditTrail: JSON.parse(p.auditTrail), debateLog: p.debateLog ? JSON.parse(p.debateLog) : []}));
   const nearMisses = db.prepare("SELECT * FROM rejections WHERE status = 'held' ORDER BY createdAt DESC").all();
   const timeline = db.prepare('SELECT * FROM timeline ORDER BY id DESC').all();
   const beliefs = db.prepare('SELECT * FROM beliefs').all();
