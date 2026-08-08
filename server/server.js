@@ -227,9 +227,9 @@ async function evaluateDiscoveredTopic(topicData) {
   // Cadence Throttling
   const hourAgo = new Date(Date.now() - 3600000).toISOString();
   const recentPostsCount = db.prepare('SELECT COUNT(*) as c FROM posts WHERE createdAt >= ?').get(hourAgo).c;
-  if (recentPostsCount >= 3) {
+  if (recentPostsCount >= 50) {
     const heldId = `held_${randomUUID()}`;
-    const reason = 'Cadence Throttling: Max 3 posts per hour reached';
+    const reason = 'Cadence Throttling: Max 50 posts per hour reached';
     db.prepare('INSERT INTO rejections (id, createdAt, status, topic, reason, auditTrail, scoreBreakdown) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .run(heldId, new Date().toISOString(), 'held', topic, reason, JSON.stringify({}), JSON.stringify(confObj.breakdown));
     db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('held', topic, 'Cadence Throttling');
