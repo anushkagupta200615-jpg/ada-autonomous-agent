@@ -595,7 +595,8 @@ export default function NewsFeed() {
   useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/internal/state');
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const res = await fetch(`${API_URL}/api/internal/state`);
         if (res.ok) {
           const data = await res.json();
           setPosts(data.posts || []);

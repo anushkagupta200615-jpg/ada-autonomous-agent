@@ -392,7 +392,8 @@ export default function AgentDashboard() {
 
   const fetchState = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/internal/state');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${API_URL}/api/internal/state`);
       const data = await res.json();
       setIsInitialized(data.isInitialized);
       setPosts(data.posts || []);
@@ -406,7 +407,8 @@ export default function AgentDashboard() {
 
   // SSE connection
   useEffect(() => {
-    const es = new EventSource('http://localhost:3001/api/stream');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const es = new EventSource(`${API_URL}/api/stream`);
     eventSourceRef.current = es;
 
     es.addEventListener('phase', (e) => {
@@ -444,7 +446,8 @@ export default function AgentDashboard() {
   const handleInitialize = async () => {
     setIsInitializing(true);
     try {
-      const res = await fetch('http://localhost:3001/api/agent/init', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${API_URL}/api/agent/init`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ persona: { name: "Ada", domain: "AI Security" } })
@@ -461,7 +464,8 @@ export default function AgentDashboard() {
     if (!manualTopic.trim()) return;
     setIsSubmittingManual(true);
     try {
-      await fetch('http://localhost:3001/api/evaluate', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      await fetch(`${API_URL}/api/evaluate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: manualTopic })
