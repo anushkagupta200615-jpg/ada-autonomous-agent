@@ -30,7 +30,8 @@ db.exec(`
     structuredEntities TEXT,
     beliefImpact TEXT,
     contradiction INTEGER,
-    auditTrail TEXT
+    auditTrail TEXT,
+    debateLog TEXT
   );
 
   CREATE TABLE IF NOT EXISTS rejections (
