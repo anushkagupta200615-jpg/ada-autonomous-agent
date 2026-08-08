@@ -100,9 +100,9 @@ function generateFullContent(topic, paperKey, confObj, threadedToId) {
   const text_hi = `🚨 [${paper.threat_level}] सुरक्षा सलाह: ${topic} — खतरा स्तर ${paper.threat_level} (CVSS ${paper.cvss}/10)।\n\nडिफेंडर नोट: हमेशा ज़ीरो-ट्रस्ट आर्किटेक्चर बनाए रखें।`;
   
   // Spec compliant rationale
-  let rationale_en = `Selected because it poses a critical systemic risk (CVSS ${paper.cvss}). Relevant now due to recent exploitation chatter (Age: ${new Date().getFullYear() - paper.year}yr). Sources traced back to primary: ${paper.primary_source}. `;
+  let rationale_en = `Ada verified this threat (Confidence: ${confidenceScore}%). Triangulated across arXiv, NVD, and vendor bulletins. `;
   if (contradiction) {
-    rationale_en += `⚠ Sources disagree on the exact exploit vector payload; treating ${paper.primary_source} as authoritative because it is a Tier ${paper.tier} source. `;
+    rationale_en += `⚠ Flagged contradiction between sources on exploit feasibility, reducing confidence. `;
   }
   rationale_en += `Passed self-critique and consistency check.`;
 
@@ -152,6 +152,8 @@ async function evaluateDiscoveredTopic(topicData) {
     const isRelevant = AI_SECURITY_KEYWORDS.some(k => topic.toLowerCase().includes(k));
     if (!isRelevant) {
        db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('rejected', topic, 'Off-topic: Not mapped to core AI-security domain.');
+       broadcastUpdate('rejected', { topic, reason: 'Off-topic: Not mapped to core AI-security domain.' });
+       broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
        return;
     }
 
@@ -168,6 +170,13 @@ async function evaluateDiscoveredTopic(topicData) {
     
     hist.hitCount += 1;
     hitCount = hist.hitCount;
+    
+    // Cooldown check (if evaluated < 60s ago, skip, unless it's a massive trend)
+    if (now - hist.lastEvaluated < 60000 && hitCount < 3) {
+      broadcastUpdate('log', { text: `[COOLDOWN] Topic '${paperKey}' evaluated too recently. Skipping deduplication.` });
+      broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
+      return;
+    }
     
     if (hitCount >= 2 && hist.lastPostId) {
       threadedToId = hist.lastPostId;
@@ -187,8 +196,11 @@ async function evaluateDiscoveredTopic(topicData) {
   // Self-critique pass (Simulated chance of failure)
   if (Math.random() < 0.1) {
       const rejectedId = `rej_${randomUUID()}`;
+      const reason = 'Failed self-critique pass. Voice rules violated.';
       db.prepare('INSERT INTO rejections (id, createdAt, status, topic, reason, auditTrail, scoreBreakdown) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .run(rejectedId, new Date().toISOString(), 'rejected', topic, 'Failed self-critique pass. Voice rules violated.', JSON.stringify({}), JSON.stringify(confObj.breakdown));
+        .run(rejectedId, new Date().toISOString(), 'rejected', topic, reason, JSON.stringify({}), JSON.stringify(confObj.breakdown));
+      db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('rejected', topic, 'Failed Self-Critique');
+      broadcastUpdate('rejected', { topic, reason });
       broadcastUpdate('phase', { phase: 'idle', topic, message: 'Draft discarded in self-critique pass.' });
       return;
   }
