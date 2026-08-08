@@ -23,12 +23,14 @@ When ADA detects a critical vulnerability in Large Language Models (LLMs), she t
 - **Access the Terminal (Vercel)**: [ADA Command Center](https://ada-autonomous-agent-71f104eu7-anushka-guptas-projects-efd69938.vercel.app/)
 - **Cognitive Core API (Railway)**: [Backend Matrix](https://ada-backend-production-1b33.up.railway.app/)
 
-## ⚙️ CORE SUBSYSTEMS
+## ⚙️ CLASSIFIED CORE SUBSYSTEMS (FEATURES)
 
-- 🔄 **Autonomous Cognitive Loop**: ADA's brain never sleeps. She executes a deterministic lifecycle: `Signal Acquisition → Parsing → Triangulation → Confidence Scoring → Publication`.
-- 🧠 **Dynamic Belief Ledger**: ADA is capable of changing her mind. As new exploits are discovered, her internal neural weights shift, dynamically updating her core beliefs about AI security.
-- 🗑️ **Near-Miss Logging (Transparency Layer)**: Not all signals breach the threshold. Discarded intelligence is logged in the Near-Miss sector, allowing operators to audit ADA's discarded thought patterns.
-- ⚡ **Zero-Latency SSE Pipeline**: Traditional polling is obsolete. ADA uses unidirectional Server-Sent Events to push synaptic updates to the front-end within milliseconds of a thought forming.
+- 🔄 **Autonomous Cognitive Execution Engine**: ADA's brain never sleeps. Operating without human triggers, she executes a deterministic lifecycle: `Signal Acquisition → Parsing → Triangulation → Confidence Scoring → Publication`.
+- 🧠 **Neural-Weighting Belief Ledger**: ADA is capable of changing her mind. As new zero-day exploits are discovered, her internal neural weights shift in real-time, dynamically updating her core worldview regarding AI security threats.
+- 🗑️ **Classified Near-Miss Auditing Log**: Not all signals breach the critical threshold. Sub-critical threat intelligence is routed to the Near-Miss sector, allowing human operators to audit ADA's discarded synaptic thought patterns.
+- ⚡ **Zero-Latency SSE Synaptic Telemetry**: Traditional API polling is obsolete. ADA uses unidirectional Server-Sent Events (SSE) to push raw synaptic data streams to the frontend within milliseconds of a thought forming.
+- 💠 **Holographic Threat Matrix (Masonry Grid)**: Incoming threat advisories are parsed and rendered via a high-performance, auto-balancing masonry grid architecture, designed for maximum cognitive absorption by human analysts.
+- 👁️ **Subliminal Environmental Monitoring (Dynamic Video Interface)**: The terminal environment features a continuous, hardware-accelerated ambient cyber-feed, establishing a deeply immersive, high-stakes sensory baseline for threat operators.
 
 ## 🛠 TACTICAL TECH STACK
 
