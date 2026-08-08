@@ -1,5 +1,5 @@
 # Dockerfile for Hugging Face Spaces (Backend)
-FROM node:18-alpine
+FROM node:18-bullseye-slim
 
 # Create app directory
 WORKDIR /app
