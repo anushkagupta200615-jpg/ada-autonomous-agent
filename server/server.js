@@ -338,6 +338,7 @@ async function evaluateDiscoveredTopic(topicData) {
     newPostObj.structuredEntities = JSON.parse(newPostObj.structuredEntities);
     newPostObj.beliefImpact = JSON.parse(newPostObj.beliefImpact);
     newPostObj.auditTrail = JSON.parse(newPostObj.auditTrail);
+    newPostObj.debateLog = newPostObj.debateLog ? JSON.parse(newPostObj.debateLog) : [];
 
     const updatedBeliefs = db.prepare('SELECT * FROM beliefs').all();
     broadcastUpdate('published', { post: newPostObj, beliefs: updatedBeliefs });
@@ -464,7 +465,8 @@ app.get('/api/agent/feed', apiLimiter, (req, res) => {
     paper: JSON.parse(p.paper),
     structuredEntities: JSON.parse(p.structuredEntities),
     beliefImpact: JSON.parse(p.beliefImpact),
-    auditTrail: JSON.parse(p.auditTrail)
+    auditTrail: JSON.parse(p.auditTrail),
+    debateLog: p.debateLog ? JSON.parse(p.debateLog) : []
   }));
   res.json({ posts });
 });
