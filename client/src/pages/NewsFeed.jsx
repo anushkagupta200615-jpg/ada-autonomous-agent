@@ -603,6 +603,9 @@ export default function NewsFeed() {
           setNearMisses(data.nearMisses || []);
           setBeliefs(data.beliefs || []);
           setNextTickAt(data.nextTickAt || null);
+          setNearMisses(data.nearMisses || []);
+          setBeliefs(data.beliefs || []);
+          setNextTickAt(data.nextTickAt || null);
           
           // Toast Notification logic
           if (data.posts.length > 0) {
@@ -652,8 +655,11 @@ export default function NewsFeed() {
     const video = videoRef.current;
     if (!video) return;
 
+    video.style.opacity = '0';
+
     if (video.readyState >= 2) {
       video.style.opacity = '1';
+      video.play().catch(() => {});
     }
 
     const fade = (target, duration, callback) => {
@@ -716,30 +722,30 @@ export default function NewsFeed() {
   }, []);
 
   return (
-    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 bg-black text-white font-body font-medium`}>
-      {/* Background Video */}
+    <div className="min-h-screen relative overflow-x-hidden bg-black text-white font-body font-medium">
+
+      {/* ── Background Video ── */}
       <video
         ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        style={{ opacity: 0 }}
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
       />
-      {/* White Overlay to make background white but keep animation visible */}
-      
-      
-      <div className="relative z-10">
-      
-      {/* Toast Notification */}
+      {/* Dark scrim for readability */}
+      <div className="fixed inset-0 z-0 bg-black/55 pointer-events-none" />
+
+      {/* ── Toast ── */}
       <AnimatePresence>
         {showToast && (
           <motion.div
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 z-50 bg-white text-black px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 border border-white/20"
+            className="fixed bottom-8 right-8 z-50 bg-white/10 backdrop-blur border border-white/20 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3"
           >
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-mono text-xs font-bold uppercase tracking-widest">{t.new_post}</span>
@@ -747,28 +753,27 @@ export default function NewsFeed() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col xl:flex-row gap-8">
-        <div className="w-full xl:w-2/3 flex-shrink-0">
-        {/* Navigation & Controls */}
-        <div className="flex items-center justify-between mb-8">
-          <button 
+      {/* ── Page content ── */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+
+        {/* Nav */}
+        <div className="max-w-7xl mx-auto w-full px-6 pt-8 flex items-center justify-between mb-6">
+          <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-white/20 hover:bg-white hover:shadow-lg transition-all text-xs font-mono uppercase tracking-widest font-bold"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 hover:bg-white/20 transition-all text-xs font-mono font-bold uppercase tracking-widest text-white"
           >
             <ArrowLeft size={14}/> {t.home}
           </button>
-          
-          {/* Mood / Cadence Activity Graph */}
-          <div className="flex items-center gap-3 bg-white/50 backdrop-blur border border-white/20 px-4 py-2 rounded-full">
-            <Activity size={14} className={mood === 'panicked' ? 'text-red-500' : 'text-blue-500'} />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-white/60">
+
+          <div className="flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 px-4 py-2 rounded-full">
+            <Activity size={14} className={mood === 'panicked' ? 'text-red-400' : 'text-blue-400'} />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-white/70">
               {mood === 'panicked' ? t.mood_panicked : mood === 'skeptical' ? t.mood_skeptical : t.mood_baseline}
             </span>
-            <div className="flex gap-1 h-3 items-end ml-2">
+            <div className="flex gap-1 h-3 items-end">
               {[...Array(5)].map((_, i) => (
-                <motion.div 
-                  key={i}
-                  animate={{ height: mood === 'panicked' ? ['20%', '100%', '20%'] : ['20%', '60%', '20%'] }}
+                <motion.div key={i}
+                  animate={{ height: mood === 'panicked' ? ['20%','100%','20%'] : ['20%','60%','20%'] }}
                   transition={{ duration: mood === 'panicked' ? 0.3 : 1.2, repeat: Infinity, delay: i * 0.1 }}
                   className={`w-1 rounded-t-sm ${mood === 'panicked' ? 'bg-red-400' : 'bg-blue-400'}`}
                 />
@@ -778,103 +783,100 @@ export default function NewsFeed() {
 
           <button
             onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
-            className="relative px-4 py-2 rounded-full bg-white text-black text-xs font-mono font-bold uppercase tracking-widest hover:bg-black/80 transition-all flex items-center gap-2 overflow-hidden group"
+            className="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-white/20 transition-all flex items-center gap-2"
           >
-            <Globe size={14} />
-            {lang === 'en' ? 'HI' : 'EN'}
-            <motion.div 
-              className="absolute inset-0 border border-white/40 rounded-full"
-              animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+            <Globe size={14}/> {lang === 'en' ? 'HI' : 'EN'}
           </button>
         </div>
 
-        <header className="mb-10 text-center">
+        {/* Hero */}
+        <header className="max-w-7xl mx-auto w-full px-6 mb-8 text-center">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-[10px] font-mono font-extrabold uppercase tracking-[0.2em] mb-6 shadow-sm"
+            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-extrabold uppercase tracking-[0.2em] mb-5 shadow backdrop-blur"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
-            {t.badge}
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/> {t.badge}
           </motion.div>
-          
-          <h1 className="text-4xl md:text-5xl font-extrabold font-heading tracking-tight text-white leading-tight mb-4">
-            {t.heading1} <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+
+          <h1 className="text-4xl md:text-6xl font-extrabold font-heading tracking-tight text-white leading-tight mb-4 drop-shadow-lg">
+            {t.heading1}<br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400">
               {t.heading2}
             </span>
           </h1>
 
           {nextTickAt && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-mono font-bold text-indigo-300 mt-2 backdrop-blur shadow">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-mono font-bold text-indigo-300 mt-2 backdrop-blur">
               <Activity size={14} className="animate-pulse"/>
-              Next Cycle In: {Math.max(0, Math.floor((nextTickAt - now)/1000))}s
+              Next Cycle In: {Math.max(0, Math.floor((nextTickAt - now) / 1000))}s
             </div>
           )}
         </header>
 
-        {/* Search Bar */}
-        <div className="mb-12 relative max-w-xl mx-auto">
-          <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" />
-          <input 
-            type="text" 
+        {/* Search */}
+        <div className="max-w-2xl mx-auto w-full px-6 mb-8 relative">
+          <Search size={18} className="absolute left-10 top-1/2 -translate-y-1/2 text-white/40" />
+          <input
+            type="text"
             placeholder={t.search}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full liquid-glass placeholder:text-white/50 shadow-[0_10px_30px_rgba(0,0,0,0.05)] rounded-full py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-body text-sm font-medium transition-all"
+            className="w-full bg-white/10 backdrop-blur border border-white/20 text-white placeholder:text-white/40 rounded-full py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 text-sm font-medium transition-all"
           />
         </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, ease: "linear", repeat: Infinity }}
-              className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full"
-            />
-            <p className="font-mono text-xs uppercase tracking-widest text-white/40 font-bold animate-pulse">
-              {t.connecting}
-            </p>
-          </div>
-        ) : (
-          <div className="columns-1 md:columns-2 gap-6 space-y-6">
-            <AnimatePresence>
-              {filteredPosts.length === 0 ? (
+        {/* ── Two-column grid ── */}
+        <div className="max-w-7xl mx-auto w-full px-6 pb-20 flex flex-col xl:flex-row gap-8 items-start flex-1">
+
+          {/* LEFT — Feed */}
+          <div className="w-full xl:flex-1 min-w-0">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-32 space-y-4">
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="col-span-full py-20 text-center"
-                >
-                  <div className="w-20 h-20 bg-white/10 rounded-3xl mx-auto flex items-center justify-center mb-6">
-                    <Brain size={32} className="text-white/30" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{t.empty_title}</h3>
-                  <p className="text-white/50 text-sm">{t.empty_desc}</p>
-                </motion.div>
-              ) : (
-                filteredPosts.map((post, index) => (
-                  <PostCard key={post.id} post={post} lang={lang} index={index} />
-                ))
-              )}
-            </AnimatePresence>
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, ease: 'linear', repeat: Infinity }}
+                  className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full"
+                />
+                <p className="font-mono text-xs uppercase tracking-widest text-white/40 font-bold animate-pulse">
+                  {t.connecting}
+                </p>
+              </div>
+            ) : (
+              <div className="columns-1 md:columns-2 gap-6">
+                <AnimatePresence>
+                  {filteredPosts.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="col-span-full py-20 text-center"
+                    >
+                      <div className="w-20 h-20 bg-white/10 rounded-3xl mx-auto flex items-center justify-center mb-6">
+                        <Brain size={32} className="text-white/30" />
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">{t.empty_title}</h3>
+                      <p className="text-white/50 text-sm">{t.empty_desc}</p>
+                    </motion.div>
+                  ) : (
+                    filteredPosts.map((post, index) => (
+                      <PostCard key={post.id} post={post} lang={lang} index={index} />
+                    ))
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      </div>
 
-      <div className="w-full xl:w-1/3 flex flex-col gap-6">
-        <BeliefLedger beliefs={beliefs} />
-        <NearMissLog nearMisses={nearMisses} />
-      </div>
+          {/* RIGHT — Sidebar */}
+          <div className="w-full xl:w-80 flex-shrink-0 flex flex-col gap-6">
+            <BeliefLedger beliefs={beliefs} />
+            <NearMissLog nearMisses={nearMisses} />
+          </div>
 
+        </div>
       </div>
     </div>
   );
 }
-
-
 function BeliefLedger({ beliefs }) {
   if (!beliefs || beliefs.length === 0) return null;
   return (
