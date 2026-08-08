@@ -15,6 +15,41 @@ function useCopy() {
   return { copied, copy };
 }
 
+// ─── ANIMATED COUNT UP ────────────────────────────────────────────────────────
+function CountUp({ value }) {
+  const nodeRef = useRef(null);
+  const spring = useSpring(0, { stiffness: 100, damping: 20 });
+  
+  useEffect(() => {
+    spring.set(value);
+  }, [value, spring]);
+
+  useEffect(() => {
+    return spring.on('change', (latest) => {
+      if (nodeRef.current) {
+        nodeRef.current.textContent = Math.round(latest);
+      }
+    });
+  }, [spring]);
+
+  return <span ref={nodeRef}>{0}</span>;
+}
+
+// ─── CYCLE COUNTDOWN ────────────────────────────────────────────────────────
+function CycleCountdown({ nextTickAt, now }) {
+    const seconds = Math.max(0, Math.floor((nextTickAt - now) / 1000));
+    return (
+        <motion.span
+            key={seconds}
+            initial={{ scale: 1.2, color: seconds === 0 ? '#10b981' : '#a5b4fc' }}
+            animate={{ scale: 1, color: '#a5b4fc' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        >
+            {seconds}s
+        </motion.span>
+    );
+}
+
 // ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
 const T = {
   en: {
@@ -226,17 +261,27 @@ function ResearchPaperCard({ paper, lang }) {
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
-          <BookOpen size={18} className="text-white/60" />
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-white/50">{t.research_context}</span>
+          <BookOpen size={18} className="text-white/80" />
+          <span className="text-xs font-mono font-bold uppercase tracking-widest text-white/70">{t.research_context}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <span className={`text-[10px] font-mono font-extrabold uppercase tracking-widest px-3 py-1 rounded-full ${tc.bg} ${tc.text}`}>
+          <motion.span 
+            initial={{ scale: 0 }} 
+            animate={{ scale: 1 }} 
+            transition={{ type: 'spring', damping: 12 }}
+            className={`text-[10px] font-mono font-extrabold uppercase tracking-widest px-3 py-1 rounded-full ${tc.bg} ${tc.text}`}
+          >
             {t.threat_level}: {paper.threat_level}
-          </span>
+          </motion.span>
           {paper.cvss && (
-            <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+            <motion.span 
+              initial={{ scale: 0 }} 
+              animate={{ scale: 1 }} 
+              transition={{ type: 'spring', damping: 12, delay: 0.1 }}
+              className="text-[10px] font-mono font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-700"
+            >
               CVSS {paper.cvss}/10
-            </span>
+            </motion.span>
           )}
         </div>
       </div>
@@ -323,14 +368,15 @@ function PostCard({ post, lang, index }) {
   return (
     <motion.article
       ref={cardRef}
-      layout="position"
-      initial={{ opacity: 0, scale: 0.8, y: 60, filter: 'blur(12px)' }}
+      layout
+      initial={{ opacity: 0, scale: 0.97, y: 30, filter: 'blur(8px)' }}
       animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{ type: 'spring', stiffness: 220, damping: 22, mass: 0.9, delay: index * 0.06 }}
+      exit={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.9, filter: 'blur(8px)' }}
+      transition={{ type: 'spring', stiffness: 260, damping: 24, delay: index * 0.05 }}
       onMouseMove={handleMouseMove}
-      className="relative break-inside-avoid rounded-[2rem] liquid-glass backdrop-blur-2xl overflow-hidden flex flex-col group mb-6"
+      className="relative break-inside-avoid rounded-[2rem] liquid-glass backdrop-blur-2xl overflow-hidden flex flex-col group mb-6 z-10 hover:z-20"
       style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)' }}
-      whileHover={{ boxShadow: '0 25px 60px -15px rgba(0,0,0,0.15)', y: -4 }}
+      whileHover={{ boxShadow: '0 25px 60px -15px rgba(0,0,0,0.15)', y: -4, scale: 1.01 }}
     >
       {/* Threading Visual Indicator */}
       {post.threadedToId && (
@@ -388,7 +434,7 @@ function PostCard({ post, lang, index }) {
         )}
 
         {/* Glitch headline on hover */}
-        <h2 className="text-2xl font-extrabold font-heading leading-tight mb-5 text-white group-hover:text-indigo-700 transition-colors duration-300">
+        <h2 className="text-2xl font-extrabold font-heading leading-tight mb-5 text-white group-hover:text-indigo-400 transition-colors duration-300 line-clamp-2">
           {text?.split('.')[0] || post.text?.split('.')[0] || 'Intelligence Report'}
         </h2>
 
@@ -410,23 +456,25 @@ function PostCard({ post, lang, index }) {
                         animate="visible" 
                         exit="hidden" 
                         variants={{
-                            visible: { transition: { staggerChildren: 0.15 } },
-                            hidden: {}
+                            visible: { opacity: 1, height: 'auto', transition: { staggerChildren: 0.12, duration: 0.3 } },
+                            hidden: { opacity: 0, height: 0, transition: { staggerChildren: 0.05, staggerDirection: -1, duration: 0.3 } }
                         }}
-                        className="space-y-3 pl-3 border-l-2 border-indigo-500/30"
+                        className="space-y-3 pl-3 border-l-2 border-indigo-500/30 overflow-hidden"
                     >
-                        {rationale.split(/(?<=\.)\s+/).filter(Boolean).map((sentence, sIdx) => (
-                            <motion.p 
-                                key={sIdx}
-                                variants={{
-                                    hidden: { opacity: 0, x: -10, filter: 'blur(4px)' },
-                                    visible: { opacity: 1, x: 0, filter: 'blur(0px)' }
-                                }}
-                                className="text-sm text-white/70 leading-relaxed font-medium"
-                            >
-                                {sentence}
-                            </motion.p>
-                        ))}
+                        <div className="py-2 space-y-3">
+                          {rationale.split(/(?<=\.)\s+/).filter(Boolean).map((sentence, sIdx) => (
+                              <motion.p 
+                                  key={sIdx}
+                                  variants={{
+                                      hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+                                      visible: { opacity: 1, y: 0, filter: 'blur(0px)' }
+                                  }}
+                                  className="text-sm text-white/90 leading-relaxed font-medium"
+                              >
+                                  {sentence}
+                              </motion.p>
+                          ))}
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -664,14 +712,32 @@ export default function NewsFeed() {
     return () => { clearInterval(interval); clearInterval(tickInterval); };
   }, [lastPostId]);
 
-  // Filter posts based on search
-  const filteredPosts = posts.filter(p => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    const txt = p.text_en?.toLowerCase() || '';
-    const rat = p.rationale_en?.toLowerCase() || '';
-    const top = p.topic?.toLowerCase() || '';
-    return txt.includes(q) || rat.includes(q) || top.includes(q);
+  // Filter and Deduplicate posts
+  const filteredPosts = [];
+  const seenTitles = new Map();
+  
+  posts.forEach(p => {
+    let match = true;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const txt = p.text_en?.toLowerCase() || '';
+      const rat = p.rationale_en?.toLowerCase() || '';
+      const top = p.topic?.toLowerCase() || '';
+      match = txt.includes(q) || rat.includes(q) || top.includes(q);
+    }
+    
+    if (match) {
+      const title = p.text_en?.split('.')[0] || p.text?.split('.')[0] || 'Unknown';
+      const normTitle = title.toLowerCase().trim();
+      
+      if (seenTitles.has(normTitle)) {
+        const parentId = seenTitles.get(normTitle);
+        filteredPosts.push({ ...p, threadedToId: parentId });
+      } else {
+        seenTitles.set(normTitle, p.id);
+        filteredPosts.push(p);
+      }
+    }
   });
 
   // Calculate funnel data from timeline if available
@@ -680,7 +746,7 @@ export default function NewsFeed() {
       funnel.scanned = 100; // Mock total or sum up
       funnel.published = posts.length;
       funnel.held = nearMisses.length;
-      funnel.rejected = funnel.scanned - (funnel.published + funnel.held); // Simplified for UI
+      funnel.rejected = Math.max(0, funnel.scanned - (funnel.published + funnel.held)); // Simplified for UI
   }
 
   // Background Mood Colors
@@ -719,7 +785,7 @@ export default function NewsFeed() {
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden bg-black text-white font-body font-medium">
+    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.4 }} className="min-h-screen relative overflow-x-hidden bg-black text-white font-body font-medium">
 
       {/* ── Background Video ── */}
       <video
@@ -803,8 +869,10 @@ export default function NewsFeed() {
 
           {nextTickAt && (
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-mono font-bold text-indigo-300 mt-2 backdrop-blur">
-              <Activity size={14} className="animate-pulse"/>
-              Next Cycle In: {Math.max(0, Math.floor((nextTickAt - now) / 1000))}s
+              <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 2 }}>
+                <Activity size={14} className="text-indigo-400"/>
+              </motion.div>
+              Next Cycle In: <CycleCountdown nextTickAt={nextTickAt} now={now} />
             </div>
           )}
         </header>
@@ -873,14 +941,22 @@ export default function NewsFeed() {
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
                   <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest font-bold">Live Scanner Ticker</span>
               </div>
-              <motion.div 
-                  animate={{ x: [0, -1000] }}
-                  transition={{ ease: "linear", duration: 20, repeat: Infinity }}
-                  className="whitespace-nowrap font-mono text-xs text-white/70"
-              >
-                  {/* Simulate scrolling intelligence */}
-                  [SCANNING] Dark web forums... [ANALYZING] CVE-2024-3861 payload signature... [HELD] Potential supply chain exploit on NPM... [VERIFYING] arXiv paper 2405.12221...
-              </motion.div>
+              <div className="flex w-max overflow-hidden relative">
+                <motion.div 
+                    animate={{ x: ["0%", "-50%"] }}
+                    transition={{ ease: "linear", duration: 15, repeat: Infinity }}
+                    className="flex items-center gap-6 whitespace-nowrap font-mono text-xs text-white/70"
+                >
+                    <span>[SCANNING] Dark web forums...</span>
+                    <motion.span animate={{ opacity: [0.6, 1, 0.6], color: ['#9ca3af', '#60a5fa', '#9ca3af'] }} transition={{ repeat: Infinity, duration: 2 }} className="bg-white/10 px-2 py-0.5 rounded text-white">[ANALYZING] CVE-2024-3861 payload signature...</motion.span>
+                    <span>[HELD] Potential supply chain exploit on NPM...</span>
+                    <span>[VERIFYING] arXiv paper 2405.12221...</span>
+                    <span>[SCANNING] Dark web forums...</span>
+                    <motion.span animate={{ opacity: [0.6, 1, 0.6], color: ['#9ca3af', '#60a5fa', '#9ca3af'] }} transition={{ repeat: Infinity, duration: 2 }} className="bg-white/10 px-2 py-0.5 rounded text-white">[ANALYZING] CVE-2024-3861 payload signature...</motion.span>
+                    <span>[HELD] Potential supply chain exploit on NPM...</span>
+                    <span>[VERIFYING] arXiv paper 2405.12221...</span>
+                </motion.div>
+              </div>
             </div>
 
             {/* Discovery Funnel */}
@@ -890,20 +966,20 @@ export default function NewsFeed() {
               </h3>
               <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
-                      <div className="flex justify-between text-[10px] font-mono text-white/60"><span>Scanned</span> <span>{funnel.scanned}</span></div>
-                      <div className="h-1.5 bg-blue-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: '100%' }} className="h-full bg-blue-500" /></div>
+                      <div className="flex justify-between text-[10px] font-mono text-white/60"><span>Scanned</span> <span><CountUp value={funnel.scanned} /></span></div>
+                      <div className="h-1.5 bg-blue-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }} className="h-full bg-blue-500" /></div>
                   </div>
                   <div className="flex flex-col gap-1 pl-2">
-                      <div className="flex justify-between text-[10px] font-mono text-white/60"><span>Held / Corroborating</span> <span>{funnel.held}</span></div>
-                      <div className="h-1.5 bg-yellow-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(funnel.held / funnel.scanned) * 100}%` }} className="h-full bg-yellow-500" /></div>
+                      <div className="flex justify-between text-[10px] font-mono text-white/60"><span>Held / Corroborating</span> <span><CountUp value={funnel.held} /></span></div>
+                      <div className="h-1.5 bg-yellow-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(funnel.held / funnel.scanned) * 100}%` }} transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }} className="h-full bg-yellow-500" /></div>
                   </div>
                   <div className="flex flex-col gap-1 pl-4">
-                      <div className="flex justify-between text-[10px] font-mono text-white/60"><span>Rejected</span> <span>{funnel.rejected}</span></div>
-                      <div className="h-1.5 bg-red-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(funnel.rejected / funnel.scanned) * 100}%` }} className="h-full bg-red-500" /></div>
+                      <div className="flex justify-between text-[10px] font-mono text-white/60"><span>Rejected</span> <span><CountUp value={funnel.rejected} /></span></div>
+                      <div className="h-1.5 bg-red-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(funnel.rejected / funnel.scanned) * 100}%` }} transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }} className="h-full bg-red-500" /></div>
                   </div>
                   <div className="flex flex-col gap-1 pl-6">
-                      <div className="flex justify-between text-[10px] font-mono text-white/60 font-bold"><span className="text-emerald-400">Published</span> <span className="text-emerald-400">{funnel.published}</span></div>
-                      <div className="h-1.5 bg-emerald-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(funnel.published / funnel.scanned) * 100}%` }} className="h-full bg-emerald-500" /></div>
+                      <div className="flex justify-between text-[10px] font-mono text-white/60 font-bold"><span className="text-emerald-400">Published</span> <span className="text-emerald-400"><CountUp value={funnel.published} /></span></div>
+                      <div className="h-1.5 bg-emerald-500/20 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(funnel.published / funnel.scanned) * 100}%` }} transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }} className="h-full bg-emerald-500" /></div>
                   </div>
               </div>
             </div>
@@ -914,7 +990,7 @@ export default function NewsFeed() {
 
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 function BeliefLedger({ beliefs }) {

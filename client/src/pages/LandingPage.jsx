@@ -152,7 +152,16 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative">
+    <motion.div 
+      initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.4 }}
+      className="relative"
+    >
+      <motion.div 
+        animate={{ backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"] }} 
+        transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
+        className="fixed inset-0 z-[1] bg-gradient-to-tr from-transparent via-blue-500/10 to-purple-500/10 pointer-events-none mix-blend-overlay" 
+        style={{ backgroundSize: '200% 200%' }}
+      />
       <video
         ref={videoRef}
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4"
@@ -201,6 +210,6 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
-    </div>
+    </motion.div>
   );
 }

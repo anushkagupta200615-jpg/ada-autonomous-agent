@@ -289,14 +289,16 @@ async function evaluateDiscoveredTopic(topicData) {
 // ─────────────────────────────────────────────────────────────────────────────
 // DYNAMIC AUTONOMOUS LOOP
 // ─────────────────────────────────────────────────────────────────────────────
+let topicIndex = 0;
+
 function scheduleNextTick() {
   const isInit = getKv('isInitialized', false);
   if (!isInit) return;
   
   // Jittered scheduling
-  let baseDelay = 3000;
-  if (runtimeState.mood === 'panicked') baseDelay = 1500;
-  else if (runtimeState.mood === 'skeptical') baseDelay = 4500;
+  let baseDelay = 10000;
+  if (runtimeState.mood === 'panicked') baseDelay = 6000;
+  else if (runtimeState.mood === 'skeptical') baseDelay = 15000;
   
   const jitter = Math.floor(Math.random() * 1000) - 500; // +/- 0.5 seconds
   let delay = Math.max(1000, baseDelay + jitter);
@@ -311,7 +313,8 @@ function scheduleNextTick() {
 
   runtimeState.autonomousTimeout = setTimeout(async () => {
     try {
-      const randomTopic = ALL_TOPICS[Math.floor(Math.random() * ALL_TOPICS.length)];
+      const randomTopic = ALL_TOPICS[topicIndex];
+      topicIndex = (topicIndex + 1) % ALL_TOPICS.length;
       await evaluateDiscoveredTopic(randomTopic);
     } catch (e) {
       console.error("Graceful degradation: Source scan failed, skipping cycle", e);
@@ -340,7 +343,8 @@ app.post('/api/agent/init', (req, res) => {
   
   // Immediate first hit
   setTimeout(async () => {
-    const initialTopic = ALL_TOPICS[Math.floor(Math.random() * ALL_TOPICS.length)];
+    const initialTopic = ALL_TOPICS[topicIndex];
+    topicIndex = (topicIndex + 1) % ALL_TOPICS.length;
     await evaluateDiscoveredTopic(initialTopic);
   }, 1000);
 
@@ -387,7 +391,7 @@ app.get('/api/agent/memory', (req, res) => {
 
 app.get('/api/internal/state', (req, res) => {
   const posts = db.prepare('SELECT * FROM posts ORDER BY createdAt DESC').all().map(p => ({...p, sources: JSON.parse(p.sources), paper: JSON.parse(p.paper), structuredEntities: JSON.parse(p.structuredEntities), beliefImpact: JSON.parse(p.beliefImpact), auditTrail: JSON.parse(p.auditTrail)}));
-  const nearMisses = db.prepare('SELECT * FROM rejections WHERE status = "held" ORDER BY createdAt DESC').all();
+  const nearMisses = db.prepare("SELECT * FROM rejections WHERE status = 'held' ORDER BY createdAt DESC").all();
   const timeline = db.prepare('SELECT * FROM timeline ORDER BY id DESC').all();
   const beliefs = db.prepare('SELECT * FROM beliefs').all();
   

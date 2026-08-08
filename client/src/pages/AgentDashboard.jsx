@@ -44,9 +44,9 @@ function HackerTerminal({ logs }) {
           <span className="text-[10px] font-mono text-white/60 uppercase tracking-[0.2em] font-bold">Autonomous Core Terminal</span>
         </div>
         <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
-          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
-          <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
+          <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }} className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+          <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }} className="w-2.5 h-2.5 rounded-full bg-green-500" />
         </div>
       </div>
 
@@ -237,8 +237,10 @@ function AgentStatusPanel({ phase, topic, isInitialized }) {
           <div className="flex items-center gap-3">
             <Database size={14} />
             <span>Memory:</span>
-            <span className={isInitialized ? 'text-emerald-700' : 'text-black/40'}>
-              {isInitialized ? 'Syncing...' : 'Disconnected'}
+            <span className={isInitialized ? 'text-emerald-700' : 'text-black/60'}>
+              {isInitialized ? (
+                <MemorySyncState />
+              ) : 'Disconnected'}
             </span>
           </div>
         </div>
@@ -275,9 +277,12 @@ function AgentStatusPanel({ phase, topic, isInitialized }) {
               className="overflow-hidden"
             >
               <div className="flex items-center gap-3 mb-4">
-                {PHASES[phase]?.icon && React.createElement(PHASES[phase].icon, { size: 16, color: PHASES[phase].color })}
-                <span className="text-xs font-mono font-bold uppercase tracking-widest" style={{ color: PHASES[phase]?.color }}>
+                <motion.div animate={phase === 'scanning' ? { rotate: 360 } : {}} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
+                  {PHASES[phase]?.icon && React.createElement(PHASES[phase].icon, { size: 16, color: PHASES[phase].color })}
+                </motion.div>
+                <span className="text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: PHASES[phase]?.color }}>
                   {PHASES[phase]?.label}
+                  {phase === 'scanning' && <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>...</motion.span>}
                 </span>
               </div>
 
@@ -340,6 +345,20 @@ function AgentStatusPanel({ phase, topic, isInitialized }) {
   );
 }
 
+function MemorySyncState() {
+  const [syncState, setSyncState] = useState('Syncing...');
+  useEffect(() => {
+    const t = setTimeout(() => setSyncState('Synced'), 2500);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <span className="flex items-center gap-1.5">
+      {syncState}
+      {syncState === 'Syncing...' && <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }}>...</motion.span>}
+    </span>
+  );
+}
+
 export default function AgentDashboard() {
   const navigate = useNavigate();
   const [expandedPost, setExpandedPost] = useState(null);
@@ -347,6 +366,7 @@ export default function AgentDashboard() {
   // State
   const [isInitialized, setIsInitialized] = useState(false);
   const [agentId, setAgentId] = useState(null);
+  const [fallbackSessionId] = useState(`ada-secure-${Math.random().toString(16).slice(2,8)}`);
   const [posts, setPosts] = useState([]);
   const [timeline, setTimeline] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -476,7 +496,7 @@ export default function AgentDashboard() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden text-black font-body flex items-center justify-center bg-[#eaeaea]">
+    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.4 }} className="relative w-screen h-screen overflow-hidden text-black font-body flex items-center justify-center bg-[#eaeaea]">
       <video
         ref={videoRef}
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4"
@@ -551,7 +571,7 @@ export default function AgentDashboard() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                 </div>
-                Session ID: {agentId || 'ada-secure-xxx'}
+                Session ID: {agentId || fallbackSessionId}
               </motion.div>
             )}
           </div>
@@ -618,9 +638,9 @@ export default function AgentDashboard() {
           {/* Internal Published Feed */}
           <div className="flex flex-col gap-5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {posts.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full opacity-30">
-                <Brain size={48} className="mb-4" />
-                <p className="font-mono text-sm tracking-widest uppercase">Internal memory empty</p>
+              <div className="flex flex-col items-center justify-center h-full opacity-60">
+                <Brain size={48} className="mb-4 text-black/60" />
+                <p className="font-mono text-sm tracking-widest uppercase text-black/60">Internal memory empty</p>
               </div>
             )}
             <AnimatePresence>
@@ -668,6 +688,6 @@ export default function AgentDashboard() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
         .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); }
       `}} />
-    </div>
+    </motion.div>
   );
 }
