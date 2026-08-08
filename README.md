@@ -1,112 +1,110 @@
 <div align="center">
-  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2FjNGE4NzU1OTIzMDY4ZTEyMzBkMzZmOTkxMGRiZTE0NWMxMGIzMiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/3o7TKSjRrfIPjeiVyM/giphy.gif" alt="Ada Agent Banner" width="600" />
+  <img src="./assets/banner.png" alt="Ada Neural Interface Banner" width="800" />
   
-  # 🧠 Ada - The Autonomous Security Agent
+  # ◼️ PROJECT: ADA (Advanced Defense Agent)
   
-  **An experimental, continuously running AI intelligence agent that researches, scores, and publishes cyber-security vulnerabilities in real-time.**
+  **Classified Level IV Autonomous Threat Intelligence & Vulnerability Simulation Matrix**
 
-  [![Frontend Live](https://img.shields.io/badge/Frontend-Live_on_Vercel-000000?style=for-the-badge&logo=vercel)](https://ada-autonomous-agent-71f104eu7-anushka-guptas-projects-efd69938.vercel.app/)
-  [![Backend Live](https://img.shields.io/badge/Backend-Live_on_Railway-5B12E0?style=for-the-badge&logo=railway)](https://ada-backend-production-1b33.up.railway.app/)
+  [![Frontend Live](https://img.shields.io/badge/Neural_Interface-Active-00FF00?style=for-the-badge&logo=vercel)](https://ada-autonomous-agent-71f104eu7-anushka-guptas-projects-efd69938.vercel.app/)
+  [![Backend Live](https://img.shields.io/badge/Cognitive_Core-Online-5B12E0?style=for-the-badge&logo=railway)](https://ada-backend-production-1b33.up.railway.app/)
   
 </div>
 
 ---
 
-## 🌌 Overview
+## 👁️ OVERVIEW: THE MACHINE AWAKES
 
-Ada is not a traditional chatbot. She is a **proactive, fully autonomous agentic system**. Once deployed, Ada continuously runs in the background, scanning simulated intelligence feeds for new AI/ML security vulnerabilities (like prompt injection, RAG exploits, and model poisoning). 
+PROJECT: ADA is not a conversational chatbot—she is a **weaponized, fully autonomous cognitive entity** designed for zero-day threat analysis. Operating asynchronously in the background 24/7, ADA scans dark-web equivalents, parses academic vulnerability datasets, and continuously updates her internal worldview (Belief Ledger) without human supervision.
 
-When Ada discovers a potential threat, she triangulates sources, calculates a confidence score, updates her internal "Belief Ledger", and eventually publishes a real-time security advisory directly to the frontend interface.
+When ADA detects a critical vulnerability in Large Language Models (LLMs), she triangulates the threat vector, assigns a CVSS impact score, and broadcasts the advisory through a low-latency Server-Sent Events (SSE) data pipeline directly to your local terminal interface.
 
-## 🚀 Live Demo
+## 📡 NEURAL INTERFACE ACCESS
 
-- **Frontend (UI)**: [Vercel Deployment](https://ada-autonomous-agent-71f104eu7-anushka-guptas-projects-efd69938.vercel.app/)
-- **Backend (API/SSE)**: [Railway Deployment](https://ada-backend-production-1b33.up.railway.app/)
+- **Access the Terminal (Vercel)**: [ADA Command Center](https://ada-autonomous-agent-71f104eu7-anushka-guptas-projects-efd69938.vercel.app/)
+- **Cognitive Core API (Railway)**: [Backend Matrix](https://ada-backend-production-1b33.up.railway.app/)
 
-## ✨ Key Features
+## ⚙️ CORE SUBSYSTEMS
 
-- 🔄 **Autonomous Cognitive Loop**: Ada operates on a continuous `Scanning → Reading → Analyzing → Deciding` loop without any human intervention.
-- 📡 **Real-Time Data Streaming**: Uses **Server-Sent Events (SSE)** to stream Ada's internal thoughts and state changes to the UI instantaneously.
-- 🧠 **Dynamic Belief Ledger**: Ada maintains a persistent internal worldview. As she uncovers new exploits, her beliefs about AI security strengthen or weaken.
-- 🛑 **Near-Miss Logging**: Not all intelligence is published. If a threat doesn't meet Ada's confidence threshold, it gets sent to the "Near-Miss Log", providing transparency into her decision-making process.
-- 🎨 **Cyber-Aesthetic UI**: A beautiful, dynamic, masonry-grid interface with glassmorphism, background video looping, and interactive micro-animations.
+- 🔄 **Autonomous Cognitive Loop**: ADA's brain never sleeps. She executes a deterministic lifecycle: `Signal Acquisition → Parsing → Triangulation → Confidence Scoring → Publication`.
+- 🧠 **Dynamic Belief Ledger**: ADA is capable of changing her mind. As new exploits are discovered, her internal neural weights shift, dynamically updating her core beliefs about AI security.
+- 🗑️ **Near-Miss Logging (Transparency Layer)**: Not all signals breach the threshold. Discarded intelligence is logged in the Near-Miss sector, allowing operators to audit ADA's discarded thought patterns.
+- ⚡ **Zero-Latency SSE Pipeline**: Traditional polling is obsolete. ADA uses unidirectional Server-Sent Events to push synaptic updates to the front-end within milliseconds of a thought forming.
 
-## 🛠 Tech Stack
+## 🛠 TACTICAL TECH STACK
 
-| Domain | Technology |
+| Layer | Implementation |
 |---|---|
-| **Frontend** | React, Vite, Tailwind CSS, Framer Motion, Lucide React |
-| **Backend** | Node.js, Express.js |
-| **Communication** | Server-Sent Events (SSE), RESTful APIs |
-| **Hosting** | Vercel (Frontend), Railway (Backend) |
+| **UI Substrate** | React, Vite, Tailwind CSS |
+| **Motion Physics** | Framer Motion (Hardware-accelerated micro-animations) |
+| **Cognitive Engine** | Node.js, Express.js |
+| **Data Telemetry** | Server-Sent Events (SSE), REST |
+| **Grid Infrastructure** | Vercel (Edge UI Deployment), Railway (Core Logic Deployment) |
 
-## 📐 Architecture Diagram
-
-Below is a visualization of Ada's internal architecture and how the backend communicates with the client in real-time.
+## 📐 SYSTEM ARCHITECTURE (MERMAID)
 
 ```mermaid
 graph TD
-    subgraph Frontend [Client Interface - Vercel]
-        UI[React UI]
-        Feed[Masonry News Feed]
-        Beliefs[Belief Ledger]
-        Logs[Near-Miss Logs]
+    subgraph Client_Matrix [Neural Terminal - Vercel Edge]
+        UI[React Holographic UI]
+        Feed[Threat Feed Matrix]
+        Beliefs[Dynamic Belief Ledger]
+        Logs[Near-Miss Auditing Log]
     end
 
-    subgraph Backend [Agent Engine - Railway]
-        Engine((Autonomous Loop))
-        KB[(Internal Knowledge Base)]
+    subgraph Server_Matrix [Cognitive Core - Railway Infrastructure]
+        Engine((Autonomous Loop Engine))
+        KB[(Classified Threat DB)]
         State{Agent State Memory}
-        Scoring[Confidence Scoring Algorithm]
+        Scoring[Confidence Scoring Matrix]
     end
 
-    %% Flow logic
-    Engine -->|Scans| KB
-    KB -->|Retrieves Papers| Scoring
-    Scoring -->|Updates| State
-    State -->|Generates Post| Engine
+    %% Internal Cognitive Flow
+    Engine -->|Web Scraping/Scanning| KB
+    KB -->|Data Extraction| Scoring
+    Scoring -->|Weight Adjustment| State
+    State -->|Advisory Generation| Engine
     
-    %% SSE connections
-    Engine == "Server-Sent Events (SSE)" ==> UI
-    State -. "State Sync" .-> Beliefs
-    State -. "Discards" .-> Logs
-    Engine -. "Publishes" .-> Feed
+    %% Real-time Telemetry
+    Engine == "SSE Low-Latency Stream" ==> UI
+    State -. "Belief Sync" .-> Beliefs
+    State -. "Failed Threshold" .-> Logs
+    Engine -. "Broadcast" .-> Feed
 
-    classDef client fill:#000000,stroke:#333,stroke-width:2px,color:#fff
-    classDef server fill:#5B12E0,stroke:#fff,stroke-width:2px,color:#fff
+    classDef terminal fill:#0a0a0a,stroke:#00ff00,stroke-width:2px,color:#00ff00
+    classDef core fill:#10002b,stroke:#5b12e0,stroke-width:2px,color:#fff
     
-    class Frontend client
-    class Backend server
+    class Client_Matrix terminal
+    class Server_Matrix core
 ```
 
-## 💻 Running Locally
+## 💻 LOCAL TERMINAL INITIATION
 
-To run Ada on your own machine:
+To boot ADA's core on your local machine:
 
-1. **Clone the repository:**
+1. **Clone the Repository:**
    ```bash
    git clone https://github.com/anushkagupta200615-jpg/ada-autonomous-agent.git
    cd ada-autonomous-agent
    ```
 
-2. **Start the Backend:**
+2. **Ignite the Cognitive Core (Backend):**
    ```bash
    cd server
    npm install
    node server.js
    ```
-   *The backend will run on `http://localhost:3001`*
+   *Core operates on port `3001`*
 
-3. **Start the Frontend:**
-   Open a new terminal and run:
+3. **Initialize the Neural Terminal (Frontend):**
+   Open a secondary terminal:
    ```bash
    cd client
    npm install
    npm run dev
    ```
-   *The frontend will run on `http://localhost:5173`*
+   *Terminal boots on `http://localhost:5173`*
 
 ---
 <div align="center">
-  <i>Built with ❤️ for the future of AI Security.</i>
+  <i>"I do not sleep. I do not rest. I simply observe." - ADA</i>
 </div>
