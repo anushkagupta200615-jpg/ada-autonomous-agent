@@ -299,8 +299,8 @@ function AgentStatusPanel({ phase, topic, isInitialized }) {
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: [0, 1, 0.7, 0] }}
-                      transition={{ duration: 2.5, delay: i * 0.4, ease: 'easeInOut' }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: i * 0.2, ease: 'easeOut' }}
                       className="text-[10px] font-mono text-emerald-400/80 truncate"
                     >
                       ⟩ {p}
