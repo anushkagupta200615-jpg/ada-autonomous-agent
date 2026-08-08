@@ -183,7 +183,7 @@ async function evaluateDiscoveredTopic(topicData) {
     }
 
     const paper = paperKey ? RESEARCH_PAPERS[paperKey] : null;
-    const sources = paper ? [paper.url, 'https://nvd.nist.gov/'] : [];
+    const sources = paper ? [paper.url, 'https://nvd.nist.gov/', 'https://linkedin.com/feed/updates', 'https://twitter.com/threatintel'] : [];
 
     // Topic Relevance Filter - DISABLED FOR HACKATHON DEMO
     const isRelevant = true;
