@@ -229,10 +229,13 @@ async function evaluateDiscoveredTopic(topicData) {
   const recentPostsCount = db.prepare('SELECT COUNT(*) as c FROM posts WHERE createdAt >= ?').get(hourAgo).c;
   if (recentPostsCount >= 3) {
     const heldId = `held_${randomUUID()}`;
+    const reason = 'Cadence Throttling: Max 3 posts per hour reached';
     db.prepare('INSERT INTO rejections (id, createdAt, status, topic, reason, auditTrail, scoreBreakdown) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(heldId, new Date().toISOString(), 'held', topic, 'Cadence Throttling: Max 3 posts per hour reached', JSON.stringify({}), JSON.stringify(confObj.breakdown));
+      .run(heldId, new Date().toISOString(), 'held', topic, reason, JSON.stringify({}), JSON.stringify(confObj.breakdown));
     db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('held', topic, 'Cadence Throttling');
-    broadcastUpdate('held', { nearMiss: { id: heldId, topic, reason: 'Cadence Throttling', createdAt: new Date().toISOString() } });
+    broadcastUpdate('held', { nearMiss: { id: heldId, topic, reason, createdAt: new Date().toISOString() } });
+    broadcastUpdate('rejected', { topic, reason });
+    broadcastUpdate('log', { text: `[HELD] ✗ ${reason}` });
     broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
     return;
   }
