@@ -85,7 +85,7 @@ function ResultModal({ result, onClose }) {
 
   useEffect(() => {
     if (result) {
-      const timer = setTimeout(onClose, 8000);
+      const timer = setTimeout(onClose, 15000);
       return () => clearTimeout(timer);
     }
   }, [result]);
@@ -166,7 +166,7 @@ function ResultModal({ result, onClose }) {
                   transition={{ delay: 0.5 }}
                   className="text-[10px] font-mono text-black/40 tracking-widest uppercase"
                 >
-                  Auto-closing in 8s
+                  Auto-closing in 15s
                 </motion.div>
                 <button
                   onClick={onClose}
@@ -180,7 +180,7 @@ function ResultModal({ result, onClose }) {
                 className={`absolute bottom-0 left-0 h-1 ${isPublished ? 'bg-emerald-500' : 'bg-rose-500'}`}
                 initial={{ width: '100%' }}
                 animate={{ width: '0%' }}
-                transition={{ duration: 8, ease: 'linear' }}
+                transition={{ duration: 15, ease: 'linear' }}
               />
             </div>
           </motion.div>
