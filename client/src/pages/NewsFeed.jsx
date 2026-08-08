@@ -289,17 +289,17 @@ function ResearchPaperCard({ paper, lang }) {
       <h3 className="font-bold text-lg text-white leading-snug mb-2">{paper.title}</h3>
       
       <div className="flex flex-wrap gap-3 mb-5 text-[11px] font-mono text-white/50">
-        <span className="flex items-center gap-1.5"><Users size={12}/> {paper.authors.slice(0, 2).join(', ')}</span>
+        <span className="flex items-center gap-1.5"><Users size={12}/> {paper.authors ? paper.authors.slice(0, 2).join(', ') : 'Ada Core AI'}</span>
         <span className="flex items-center gap-1.5"><Calendar size={12}/> {paper.year}</span>
-        <span className="flex items-center gap-1.5"><Star size={12}/> {paper.citations.toLocaleString()} {t.citations}</span>
-        <span className="flex items-center gap-1.5"><FileText size={12}/> {t.venue} {paper.venue}</span>
+        <span className="flex items-center gap-1.5"><Star size={12}/> {paper.citations ? paper.citations.toLocaleString() : 0} {t.citations}</span>
+        <span className="flex items-center gap-1.5"><FileText size={12}/> {t.venue} {paper.venue || 'Live Threat Feed'}</span>
       </div>
 
       {/* Abstract */}
       <div className="rounded-2xl bg-white/10 border border-white/10 p-5 mb-5">
         <p className="text-[10px] font-mono uppercase tracking-widest text-white/40 font-bold mb-3">{t.abstract}</p>
         <p className="text-sm text-white/70 leading-relaxed">
-          {lang === 'hi' ? paper.abstract_hi : paper.abstract}
+          {lang === 'hi' ? (paper.abstract_hi || paper.title) : (paper.abstract || paper.title)}
         </p>
       </div>
 
@@ -331,9 +331,9 @@ function ResearchPaperCard({ paper, lang }) {
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <a href={paper.url} target="_blank" rel="noopener noreferrer"
+        <a href={paper.url || '#'} target="_blank" rel="noopener noreferrer"
           className="text-xs font-mono text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 font-bold hover:bg-blue-100 transition-colors flex items-center gap-1.5">
-          <ExternalLink size={11}/> arxiv:{paper.arxivId}
+          <ExternalLink size={11}/> {paper.arxivId ? `arxiv:${paper.arxivId}` : 'Source Link'}
         </a>
       </div>
     </motion.div>
@@ -567,7 +567,7 @@ function PostCard({ post, lang, index }) {
                   <div>
                     <span className="text-[10px] text-white/40 uppercase tracking-widest">Score Breakdown</span>
                     <ul className="mt-1 space-y-1">
-                      {post.auditTrail.scoreBreakdown.map((s, i) => (
+                      {post.auditTrail.breakdown?.map((s, i) => (
                         <li key={i} className="text-xs font-mono flex justify-between">
                           <span>{s.factor}</span>
                           <span className={s.impact > 0 ? 'text-emerald-400' : 'text-red-400'}>{s.impact > 0 ? '+' : ''}{s.impact}</span>
