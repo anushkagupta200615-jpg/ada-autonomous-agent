@@ -29,6 +29,14 @@ Instead of a human having to manually search the internet for new security threa
 
 In short, we built a proactive digital worker that autonomously hunts for AI security flaws so you don't have to!
 
+## 🔄 HOW DOES IT WORK? (THE PROCESS)
+
+Here is a simple step-by-step of ADA's workflow:
+1. **Search & Collect:** She continuously scrapes the internet and vulnerability databases for new AI threats.
+2. **Analyze & Score:** She evaluates the threat to see if it's real and assigns a "danger score" (CVSS).
+3. **Decide:** If the threat is legitimate, she updates her internal memory. If it's a false alarm, she logs it and moves on.
+4. **Publish:** She instantly pushes a live alert to the dashboard so you can see the threat in real-time.
+
 ## 📡 NEURAL INTERFACE ACCESS
 
 - **Access the Terminal (Vercel)**: [ADA Command Center](https://ada-autonomous-agent-71f104eu7-anushka-guptas-projects-efd69938.vercel.app/)
