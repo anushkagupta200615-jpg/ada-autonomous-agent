@@ -62,7 +62,30 @@ db.exec(`
     lastEvaluated INTEGER,
     lastPostId TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS error_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT,
+    stage TEXT,
+    message TEXT,
+    error TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS funnel_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT,
+    scanned INTEGER,
+    held INTEGER,
+    rejected INTEGER,
+    published INTEGER
+  );
 `);
+
+try {
+  db.exec('ALTER TABLE posts ADD COLUMN correctsPostId TEXT');
+} catch (e) {
+  // Ignore if column already exists
+}
 
 // Helper to initialize default beliefs if empty
 const countBeliefs = db.prepare('SELECT COUNT(*) as count FROM beliefs').get();

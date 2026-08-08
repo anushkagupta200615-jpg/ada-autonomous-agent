@@ -67,13 +67,28 @@ Here is a simple step-by-step of ADA's workflow:
 | Capability | ADA Subsystem Fulfillment |
 |------------|---------------------------|
 | **Topic Discovery** | Autonomously scans Dark Web equivalents & arXiv academic datasets for zero-day LLM/AI threats. |
-| **Editorial Judgment** | Filters noise via a 100-point Confidence Scoring matrix. Sub-critical signals are relegated to the Auditable Near-Miss Log. |
-| **Consistent Persona** | Operates as a classified defense agent. Internal 'mood' shifts (Skeptical, Panicked, Baseline) dynamically alter threshold tolerances and publishing cadence. |
-| **Memory** | Neural-Weighting Belief Ledger tracks long-term conviction on recurring threat vectors, preventing duplicate signal degradation. |
-| **Autonomous Publishing** | Deterministic Autonomous Loop Engine executes continuously without human prompts, pushing telemetry via low-latency SSE. |
-| **Publishing Rationale** | See API Transmission Protocol for the unredacted cryptographic JSON rationale broadcast generated on every published alert. |
 
-## 🛠 TACTICAL TECH STACK
+| Requirement | ADA Implementation |
+| :--- | :--- |
+| **Autonomy** | Fully autonomous continuous loop (No human-in-the-loop required). Self-scheduling via SQLite `kv_state` with jittered intervals. |
+| **Reasoning Transparency** | Exposes full multi-factor scoring breakdown (Recency, Specificity, Source-tier, Novelty) and retains authentic lower-scoring runner-ups for editorial audit. |
+| **Correction & Lineage** | Explicit Retraction Flow for contradictions; `correctsPostId` and `continuesFrom` linkage exposed in the API. |
+| **Reliability** | Try/catch error logging, graceful degradation on source failure, and `funnel_snapshots` history tracking over 48 hours. |
+| **Testing & Verification** | Comprehensive Jest unit test suite covering the deterministic scoring rubric (`npm test`). |
+
+---
+
+## ◆ OPERATIONAL READINESS (HACKATHON EVALUATION)
+
+To ensure ADA survives unattended for the 48-hour evaluation window, the following safeguards are in place:
+1. **Status Verification:** The `/api/agent/status` endpoint exposes `uptime`, `cycleCount`, and `lastError`.
+2. **Rate Limiting:** Public GET endpoints are protected by a 1 req/sec rate limit to prevent DDOS/exhaustion during judging.
+3. **Uptime Pinger:** A lightweight `/api/health` endpoint is available. **To prevent Railway free-tier sleep**, configure UptimeRobot or cron-job.org to ping `https://[your-railway-url]/api/health` every 10 minutes.
+4. **Resiliency:** The autonomous loop is resilient to restarts; it reads `lastScanAt` and `nextScanAt` from the database on boot, resuming its exact cadence rather than resetting from zero.
+
+---
+
+## ◈ TACTICAL TECH STACK
 
 | Layer | Implementation |
 |---|---|

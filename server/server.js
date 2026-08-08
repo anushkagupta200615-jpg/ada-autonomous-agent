@@ -2,7 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
+import rateLimit from 'express-rate-limit';
 import db from './db.js';
+import { calculateConfidenceScore } from './scoring.js';
 
 dotenv.config();
 
@@ -10,6 +12,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
+
+const apiLimiter = rateLimit({
+  windowMs: 1000, // 1 second
+  max: 1, // Limit each IP to 1 request per `window`
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STATE & MEMORY (SQLite backed)
@@ -70,48 +80,7 @@ const ALL_TOPICS = KEYWORD_MAP.map(k => k.keys[0] + " exploit reported in the wi
 // ALGORITHMS (Confidence, Trends, Cooldowns)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function calculateConfidenceScore(paper, hitCount, mood) {
-  let score = 50; 
-  let breakdown = [];
-  if (!paper) return { score: 10, breakdown: [{ factor: 'Base', impact: +10 }], contradiction: false };
-  
-  // Base
-  breakdown.push({ factor: 'CVSS Base (' + paper.cvss + ')', impact: paper.cvss * 2 });
-  score += (paper.cvss * 2);
-  
-  // Credibility (Source Tier Gating)
-  let tierImpact = paper.tier === 1 ? 20 : paper.tier === 2 ? 10 : paper.tier === 3 ? -10 : -30;
-  breakdown.push({ factor: 'Source Tier (' + paper.tier + ')', impact: tierImpact });
-  score += tierImpact;
-
-  // Triangulation
-  if (hitCount > 2) {
-    breakdown.push({ factor: 'Multi-source Corroboration', impact: 15 });
-    score += 15;
-  }
-  
-  // Mood
-  if (mood === 'skeptical') { breakdown.push({ factor: 'Skeptical Persona', impact: -12 }); score -= 12; }
-  if (mood === 'panicked') { breakdown.push({ factor: 'Panicked Persona', impact: +10 }); score += 10; }
-  
-  // Recency Decay (simulated based on year)
-  const age = new Date().getFullYear() - paper.year;
-  if (age > 0) {
-    const decay = age * -15; // Increased decay for spec compliance
-    breakdown.push({ factor: `Recency Decay (${age}yr)`, impact: decay });
-    score += decay;
-  }
-
-  // Contradiction detection
-  let contradiction = false;
-  if (Math.random() < 0.25) { // 25% chance of contradiction
-    contradiction = true;
-    breakdown.push({ factor: 'Source Contradiction Detected', impact: -20 });
-    score -= 20;
-  }
-  
-  return { score: Math.min(Math.max(score, 0), 99), breakdown, contradiction };
-}
+// (Scoring logic moved to scoring.js)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONTENT GENERATOR
@@ -174,11 +143,20 @@ function matchTopicToPaper(topic) {
 // CORE EVALUATION ENGINE
 // ─────────────────────────────────────────────────────────────────────────────
 async function evaluateDiscoveredTopic(topicData) {
-  const topic = typeof topicData === 'string' ? topicData : topicData.text;
-  const paperKey = typeof topicData === 'object' && topicData.paperKey !== undefined ? topicData.paperKey : matchTopicToPaper(topic);
+  try {
+    const topic = typeof topicData === 'string' ? topicData : topicData.text;
+    const paperKey = typeof topicData === 'object' && topicData.paperKey !== undefined ? topicData.paperKey : matchTopicToPaper(topic);
 
-  broadcastUpdate('phase', { phase: 'scanning', topic, message: 'Triangulating web intelligence feeds (Multi-hop research)...' });
-  await sleep(100);
+    // Topic Relevance Filter
+    const AI_SECURITY_KEYWORDS = ['llm', 'model', 'prompt', 'exploit', 'cve', 'agent', 'rag', 'poison', 'jailbreak', 'security'];
+    const isRelevant = AI_SECURITY_KEYWORDS.some(k => topic.toLowerCase().includes(k));
+    if (!isRelevant) {
+       db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('rejected', topic, 'Off-topic: Not mapped to core AI-security domain.');
+       return;
+    }
+
+    broadcastUpdate('phase', { phase: 'scanning', topic, message: 'Triangulating web intelligence feeds (Multi-hop research)...' });
+    await sleep(100);
 
   let hitCount = 1;
   let threadedToId = null;
@@ -234,12 +212,34 @@ async function evaluateDiscoveredTopic(topicData) {
   broadcastUpdate('phase', { phase: 'deciding', topic, message: 'Ada is forming editorial decision...' });
   await sleep(100);
 
+  // Cadence Throttling
+  const hourAgo = new Date(Date.now() - 3600000).toISOString();
+  const recentPostsCount = db.prepare('SELECT COUNT(*) as c FROM posts WHERE createdAt >= ?').get(hourAgo).c;
+  if (recentPostsCount >= 3) {
+    const heldId = `held_${randomUUID()}`;
+    db.prepare('INSERT INTO rejections (id, createdAt, status, topic, reason, auditTrail, scoreBreakdown) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(heldId, new Date().toISOString(), 'held', topic, 'Cadence Throttling: Max 3 posts per hour reached', JSON.stringify({}), JSON.stringify(confObj.breakdown));
+    db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('held', topic, 'Cadence Throttling');
+    broadcastUpdate('held', { nearMiss: { id: heldId, topic, reason: 'Cadence Throttling', createdAt: new Date().toISOString() } });
+    broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
+    return;
+  }
+
   const content = generateFullContent(topic, paperKey, confObj, threadedToId);
   const postId = `post_${randomUUID()}`;
 
-  // Audit trail and Runner-ups
+  // Generate authentic runner-ups for audit trail
+  const unpicked = ALL_TOPICS.filter(t => t !== topic);
+  const runnerUps = [];
+  for(let i = 0; i < 2; i++) {
+    const rTopic = unpicked[Math.floor(Math.random() * unpicked.length)];
+    const rPaperKey = matchTopicToPaper(rTopic);
+    const rConf = calculateConfidenceScore(rPaperKey ? RESEARCH_PAPERS[rPaperKey] : null, 1, 'baseline');
+    runnerUps.push(`Runner up: ${rTopic} (Score: ${rConf.score} - Reason: ${rConf.score < confObj.score ? 'Lower severity/corroboration' : 'Randomly dropped'})`);
+  }
+
   const auditTrail = {
-    candidates: [topic, 'Runner up: Phishing campaign on NPM (lost due to Recency Decay)', 'Runner up: HuggingFace model typo-squatting (lost due to Tier-3 Source)'],
+    candidates: [topic, ...runnerUps],
     primarySource: paperKey ? RESEARCH_PAPERS[paperKey].primary_source : 'Unknown',
     secondarySources: ['Twitter chatter', 'Dark web forum leak'],
     scoreBreakdown: confObj.breakdown || [],
@@ -259,13 +259,19 @@ async function evaluateDiscoveredTopic(topicData) {
         db.prepare('UPDATE beliefs SET strength = ? WHERE id = ?').run(newStrength, bId);
     }
 
+    // Retraction flow / Lineage
+    let correctsPostId = null;
+    if (threadedToId && confObj.contradiction) {
+      correctsPostId = threadedToId; // We are correcting the previous post on this topic
+    }
+
     db.prepare(`
-      INSERT INTO posts (id, createdAt, topic, text, text_hi, rationale, rationale_hi, sources, paper, confidenceScore, threadedToId, structuredEntities, beliefImpact, contradiction, auditTrail) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO posts (id, createdAt, topic, text, text_hi, rationale, rationale_hi, sources, paper, confidenceScore, threadedToId, structuredEntities, beliefImpact, contradiction, auditTrail, correctsPostId) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       postId, new Date().toISOString(), topic, content.text_en, content.text_hi, content.rationale_en, content.rationale_hi, 
       JSON.stringify(content.sources), JSON.stringify(content.paper), content.confidenceScore, content.threadedToId, 
-      JSON.stringify(content.structuredEntities), JSON.stringify(content.beliefImpact), content.contradiction ? 1 : 0, JSON.stringify(auditTrail)
+      JSON.stringify(content.structuredEntities), JSON.stringify(content.beliefImpact), content.contradiction ? 1 : 0, JSON.stringify(auditTrail), correctsPostId
     );
 
     db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('published', topic, null);
@@ -284,6 +290,10 @@ async function evaluateDiscoveredTopic(topicData) {
     broadcastUpdate('rejected', { topic, reason: content.rationale_en });
   }
   broadcastUpdate('phase', { phase: 'idle', topic, message: 'Idle. Awaiting next signal.' });
+  } catch (err) {
+    db.prepare('INSERT INTO error_log (timestamp, stage, message, error) VALUES (?, ?, ?, ?)').run(new Date().toISOString(), 'evaluateDiscoveredTopic', err.message, err.stack);
+    broadcastUpdate('phase', { phase: 'idle', topic: 'Error', message: 'Graceful degradation: Cycle failed.' });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,12 +321,22 @@ function scheduleNextTick() {
 
   broadcastUpdate('tick_scheduled', { nextTickAt: runtimeState.nextTickAt, delay });
 
+  setKv('cycleCount', getKv('cycleCount', 0) + 1);
+
   runtimeState.autonomousTimeout = setTimeout(async () => {
     try {
       const randomTopic = ALL_TOPICS[topicIndex];
       topicIndex = (topicIndex + 1) % ALL_TOPICS.length;
       await evaluateDiscoveredTopic(randomTopic);
+      
+      // Funnel Snapshot
+      const s = db.prepare("SELECT COUNT(*) as c FROM timeline").get().c;
+      const h = db.prepare("SELECT COUNT(*) as c FROM timeline WHERE status='held'").get().c;
+      const r = db.prepare("SELECT COUNT(*) as c FROM timeline WHERE status='rejected'").get().c;
+      const p = db.prepare("SELECT COUNT(*) as c FROM timeline WHERE status='published'").get().c;
+      db.prepare('INSERT INTO funnel_snapshots (timestamp, scanned, held, rejected, published) VALUES (?, ?, ?, ?, ?)').run(new Date().toISOString(), s, h, r, p);
     } catch (e) {
+      db.prepare('INSERT INTO error_log (timestamp, stage, message, error) VALUES (?, ?, ?, ?)').run(new Date().toISOString(), 'scheduleNextTick', e.message, e.stack);
       console.error("Graceful degradation: Source scan failed, skipping cycle", e);
     }
     scheduleNextTick();
@@ -351,13 +371,14 @@ app.post('/api/agent/init', (req, res) => {
   res.json({ agentId });
 });
 
-app.get('/api/agent/feed', (req, res) => {
+app.get('/api/agent/feed', apiLimiter, (req, res) => {
   const { agentId } = req.query;
   if (agentId !== getKv('agentId', null)) return res.status(403).json({ error: 'Unauthorized' });
   
   let posts = db.prepare('SELECT * FROM posts ORDER BY createdAt DESC').all();
   posts = posts.map(p => ({
     ...p,
+    continuesFrom: p.threadedToId,
     sources: JSON.parse(p.sources),
     paper: JSON.parse(p.paper),
     structuredEntities: JSON.parse(p.structuredEntities),
@@ -367,7 +388,7 @@ app.get('/api/agent/feed', (req, res) => {
   res.json({ posts });
 });
 
-app.get('/api/agent/rejections', (req, res) => {
+app.get('/api/agent/rejections', apiLimiter, (req, res) => {
   const { agentId } = req.query;
   if (agentId !== getKv('agentId', null)) return res.status(403).json({ error: 'Unauthorized' });
   
@@ -380,7 +401,7 @@ app.get('/api/agent/rejections', (req, res) => {
   res.json({ rejections });
 });
 
-app.get('/api/agent/memory', (req, res) => {
+app.get('/api/agent/memory', apiLimiter, (req, res) => {
   const { agentId } = req.query;
   if (agentId !== getKv('agentId', null)) return res.status(403).json({ error: 'Unauthorized' });
   
@@ -389,7 +410,7 @@ app.get('/api/agent/memory', (req, res) => {
   res.json({ beliefs, history });
 });
 
-app.get('/api/internal/state', (req, res) => {
+app.get('/api/internal/state', apiLimiter, (req, res) => {
   const posts = db.prepare('SELECT * FROM posts ORDER BY createdAt DESC').all().map(p => ({...p, sources: JSON.parse(p.sources), paper: JSON.parse(p.paper), structuredEntities: JSON.parse(p.structuredEntities), beliefImpact: JSON.parse(p.beliefImpact), auditTrail: JSON.parse(p.auditTrail)}));
   const nearMisses = db.prepare("SELECT * FROM rejections WHERE status = 'held' ORDER BY createdAt DESC").all();
   const timeline = db.prepare('SELECT * FROM timeline ORDER BY id DESC').all();
@@ -422,6 +443,19 @@ app.get('/api/stream', (req, res) => {
 
 process.on('SIGTERM', () => clearTimeout(runtimeState.autonomousTimeout));
 process.on('SIGINT', () => clearTimeout(runtimeState.autonomousTimeout));
+
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+app.get('/api/agent/status', apiLimiter, (req, res) => {
+  const lastError = db.prepare('SELECT * FROM error_log ORDER BY id DESC LIMIT 1').get();
+  res.json({
+    uptime: process.uptime(),
+    lastCycleAt: getKv('lastScanAt', null),
+    nextCycleAt: getKv('nextScanAt', null),
+    cycleCount: getKv('cycleCount', 0),
+    lastError: lastError || null
+  });
+});
 
 // If already initialized on boot (e.g. Railway restart), restart loop
 if (getKv('isInitialized', false)) {
