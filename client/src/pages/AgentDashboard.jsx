@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Check, X, Activity, Database, Shield, Zap, FileText, Search, Brain, Rss, AlertTriangle, Newspaper, Terminal } from 'lucide-react';
+import { ChevronDown, Check, X, Activity, Database, Shield, Zap, FileText, Search, Brain, Rss, AlertTriangle, Newspaper, Terminal, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import MemoryGraph from '../components/MemoryGraph';
 
 const PHASES = {
   idle: { icon: Zap, label: 'Awaiting Signals', color: '#888' },
@@ -380,6 +381,33 @@ export default function AgentDashboard() {
   const [manualTopic, setManualTopic] = useState('');
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
   
+  // Interrogate state
+  const [interrogateText, setInterrogateText] = useState({});
+  const [interrogateResponse, setInterrogateResponse] = useState({});
+  const [isInterrogating, setIsInterrogating] = useState({});
+
+  const handleInterrogate = async (postId, e) => {
+    e.preventDefault();
+    const q = interrogateText[postId];
+    if (!q) return;
+    
+    setIsInterrogating(prev => ({ ...prev, [postId]: true }));
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${API_URL}/api/agent/interrogate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, question: q })
+      });
+      const data = await res.json();
+      setInterrogateResponse(prev => ({ ...prev, [postId]: data.answer }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsInterrogating(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+  
   const eventSourceRef = useRef(null);
   const videoRef = useRef(null);
   const targetTimeRef = useRef(0);
@@ -598,6 +626,16 @@ export default function AgentDashboard() {
           )}
 
           <HackerTerminal logs={logs} />
+          
+          {isInitialized && (
+            <div className="mt-8 h-80 relative">
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-2 font-mono text-[10px] text-white/50 tracking-[0.2em] uppercase font-bold">
+                <Database size={14} className="text-indigo-400" />
+                Live Memory Graph
+              </div>
+              <MemoryGraph posts={posts} />
+            </div>
+          )}
         </div>
 
         {/* ─── RIGHT COLUMN ────────────────────────────────── */}
@@ -672,6 +710,44 @@ export default function AgentDashboard() {
                         <p className="text-sm text-black/70 leading-relaxed mb-5 font-medium italic border-l-2 border-black/20 pl-4">
                           {post.rationale}
                         </p>
+                        
+                        {/* Debate Log */}
+                        {post.debateLog && post.debateLog.length > 0 && (
+                          <div className="mb-5 bg-black/5 rounded-xl p-4 text-xs font-mono">
+                            <h4 className="uppercase tracking-widest text-black/40 font-bold mb-3 border-b border-black/10 pb-2">Internal Agent Debate</h4>
+                            <div className="flex flex-col gap-2">
+                              {post.debateLog.map((log, idx) => (
+                                <div key={idx} className="flex flex-col">
+                                  <span className={`font-bold ${log.agent === 'Ada' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                    {log.agent}:
+                                  </span>
+                                  <span className="text-black/70 pl-2">{log.text}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Interrogation UI */}
+                        <div className="mt-4 border border-black/10 rounded-xl bg-white/50 p-4">
+                          <form onSubmit={(e) => handleInterrogate(post.id, e)} className="relative flex items-center">
+                            <input 
+                              type="text"
+                              value={interrogateText[post.id] || ''}
+                              onChange={e => setInterrogateText(prev => ({ ...prev, [post.id]: e.target.value }))}
+                              placeholder="Interrogate ADA's decision..."
+                              className="w-full bg-transparent border-none focus:ring-0 text-sm font-mono text-black placeholder:text-black/30"
+                            />
+                            <button type="submit" disabled={isInterrogating[post.id]} className="absolute right-0 text-black/40 hover:text-black">
+                              {isInterrogating[post.id] ? <Activity size={16} className="animate-spin" /> : <Send size={16} />}
+                            </button>
+                          </form>
+                          {interrogateResponse[post.id] && (
+                            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-xs font-mono text-emerald-800 bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20">
+                              <span className="font-bold">ADA:</span> {interrogateResponse[post.id]}
+                            </motion.div>
+                          )}
+                        </div>
                       </motion.div>
                     ) : null}
                   </AnimatePresence>

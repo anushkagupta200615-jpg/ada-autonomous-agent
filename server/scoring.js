@@ -60,9 +60,27 @@ export function calculateConfidenceScore(paper, hitCount, mood, currentYear = ne
   if (mood === 'skeptical') { breakdown.push({ factor: 'Skeptical Persona', impact: -12 }); score -= 12; }
   if (mood === 'panicked') { breakdown.push({ factor: 'Panicked Persona', impact: +10 }); score += 10; }
   
+  const finalScore = Math.min(Math.max(score, 0), 99);
+  
+  // Simulate Agent Debate (Ada vs Zion)
+  const debateLog = [];
+  if (paper) {
+    if (finalScore > 75) {
+      debateLog.push({ agent: 'Zion', text: `This looks like standard noise. Is the CVSS really ${paper.cvss} or just vendor inflation?` });
+      debateLog.push({ agent: 'Ada', text: `The primary source is ${paper.primary_source} (Tier ${paper.tier}). The systemic risk is verified, Zion.` });
+    } else if (contradiction) {
+      debateLog.push({ agent: 'Zion', text: `Sources contradict each other on the exploit vector. We should hold this.` });
+      debateLog.push({ agent: 'Ada', text: `I am flagging the contradiction explicitly, but the structural threat remains valid.` });
+    } else {
+      debateLog.push({ agent: 'Zion', text: `I don't buy it. The recency decay makes this irrelevant.` });
+      debateLog.push({ agent: 'Ada', text: `Agreed. Dropping signal confidence.` });
+    }
+  }
+
   return { 
-    score: Math.min(Math.max(score, 0), 99), 
+    score: finalScore, 
     breakdown, 
-    contradiction 
+    contradiction,
+    debateLog
   };
 }

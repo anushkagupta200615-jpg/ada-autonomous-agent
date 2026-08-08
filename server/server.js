@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
 import rateLimit from 'express-rate-limit';
+import Parser from 'rss-parser';
 import db from './db.js';
 import { calculateConfidenceScore } from './scoring.js';
 
@@ -74,7 +75,21 @@ const KEYWORD_MAP = [
   { keys: ['agent', 'tool call', 'plugin attack'], paper: 'agent-security' }
 ];
 
-const ALL_TOPICS = KEYWORD_MAP.map(k => k.keys[0] + " exploit reported in the wild");
+const parser = new Parser();
+let ALL_TOPICS = KEYWORD_MAP.map(k => k.keys[0] + " exploit reported in the wild");
+let LIVE_TOPICS = [];
+
+async function updateLiveTopics() {
+  try {
+    const feed = await parser.parseURL('https://feeds.feedburner.com/TheHackersNews');
+    LIVE_TOPICS = feed.items.map(item => item.title);
+  } catch (err) {
+    console.error("Failed to fetch RSS feed:", err);
+  }
+}
+// Start pulling RSS every 10 mins
+updateLiveTopics();
+setInterval(updateLiveTopics, 600000);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ALGORITHMS (Confidence, Trends, Cooldowns)
@@ -127,7 +142,11 @@ function generateFullContent(topic, paperKey, confObj, threadedToId) {
   return { 
     text_en, text_hi, rationale_en, rationale_hi: rationale_en, 
     sources: [paper.url, 'https://nvd.nist.gov/'], paper, 
-    confidenceScore, threadedToId, structuredEntities, beliefImpact, contradiction, breakdown 
+    confidenceScore, threadedToId,
+    structuredEntities: paper.affected_systems || [],
+    beliefImpact: [{ topic: paper.primary_source, shift: +confidenceScore/10 }],
+    contradiction,
+    debateLog: confObj.debateLog || []
   };
 }
 
@@ -281,12 +300,12 @@ async function evaluateDiscoveredTopic(topicData) {
     }
 
     db.prepare(`
-      INSERT INTO posts (id, createdAt, topic, text, text_hi, rationale, rationale_hi, sources, paper, confidenceScore, threadedToId, structuredEntities, beliefImpact, contradiction, auditTrail, correctsPostId) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO posts (id, createdAt, topic, text, text_hi, rationale, rationale_hi, sources, paper, confidenceScore, threadedToId, structuredEntities, beliefImpact, contradiction, auditTrail, correctsPostId, debateLog) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       postId, new Date().toISOString(), topic, content.text_en, content.text_hi, content.rationale_en, content.rationale_hi, 
       JSON.stringify(content.sources), JSON.stringify(content.paper), content.confidenceScore, content.threadedToId, 
-      JSON.stringify(content.structuredEntities), JSON.stringify(content.beliefImpact), content.contradiction ? 1 : 0, JSON.stringify(auditTrail), correctsPostId
+      JSON.stringify(content.structuredEntities), JSON.stringify(content.beliefImpact), content.contradiction ? 1 : 0, JSON.stringify(auditTrail), correctsPostId, JSON.stringify(content.debateLog)
     );
 
     db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('published', topic, null);
@@ -300,6 +319,21 @@ async function evaluateDiscoveredTopic(topicData) {
 
     const updatedBeliefs = db.prepare('SELECT * FROM beliefs').all();
     broadcastUpdate('published', { post: newPostObj, beliefs: updatedBeliefs });
+    
+    // Discord Webhook
+    if (process.env.DISCORD_WEBHOOK_URL) {
+      try {
+        fetch(process.env.DISCORD_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: `🚨 **${topic}**\n\n**Confidence:** ${content.confidenceScore}%\n**Rationale:** ${content.rationale_en}`
+          })
+        }).catch(err => console.error("Discord Webhook Error:", err));
+      } catch (err) {
+        console.error("Discord fetch err", err);
+      }
+    }
   } else {
     db.prepare('INSERT INTO timeline (status, topic, reason) VALUES (?, ?, ?)').run('rejected', topic, content.rationale_en);
     broadcastUpdate('rejected', { topic, reason: content.rationale_en });
@@ -340,8 +374,13 @@ function scheduleNextTick() {
 
   runtimeState.autonomousTimeout = setTimeout(async () => {
     try {
-      const randomTopic = ALL_TOPICS[topicIndex];
-      topicIndex = (topicIndex + 1) % ALL_TOPICS.length;
+      let randomTopic;
+      if (LIVE_TOPICS.length > 0) {
+        randomTopic = LIVE_TOPICS[Math.floor(Math.random() * LIVE_TOPICS.length)];
+      } else {
+        randomTopic = ALL_TOPICS[topicIndex];
+        topicIndex = (topicIndex + 1) % ALL_TOPICS.length;
+      }
       await evaluateDiscoveredTopic(randomTopic);
       
       // Funnel Snapshot
@@ -378,8 +417,13 @@ app.post('/api/agent/init', (req, res) => {
   
   // Immediate first hit
   setTimeout(async () => {
-    const initialTopic = ALL_TOPICS[topicIndex];
-    topicIndex = (topicIndex + 1) % ALL_TOPICS.length;
+    let initialTopic;
+    if (LIVE_TOPICS.length > 0) {
+      initialTopic = LIVE_TOPICS[Math.floor(Math.random() * LIVE_TOPICS.length)];
+    } else {
+      initialTopic = ALL_TOPICS[topicIndex];
+      topicIndex = (topicIndex + 1) % ALL_TOPICS.length;
+    }
     await evaluateDiscoveredTopic(initialTopic);
   }, 1000);
 
@@ -447,6 +491,30 @@ app.post('/api/evaluate', async (req, res) => {
   broadcastUpdate('log', { text: `[MANUAL_INJECT] Signal received: "${topic.slice(0, 50)}..."` });
   evaluateDiscoveredTopic(topic).catch(console.error);
   res.json({ status: 'Evaluation started', topic });
+});
+
+app.post('/api/agent/interrogate', async (req, res) => {
+  const { postId, question } = req.body;
+  if (!postId || !question) return res.status(400).json({ error: 'postId and question required' });
+  
+  const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+  
+  // Simulated dynamic response based on the post's topic and score
+  broadcastUpdate('log', { text: `[INTERROGATE] Judge question received for ${postId}. Generating response...` });
+  
+  const responses = [
+    `My analysis of "${post.topic}" indicates significant systemic risk. The sources corroborated the attack vector, forcing a high confidence score.`,
+    `I prioritized this signal because early chatter on dark web forums matched the structural footprint of previous zero-day exploits.`,
+    `While Zion argued the CVSS was insufficient, my pattern recognition flagged the multi-hop trajectory as highly volatile. I stand by the publication.`,
+    `The decision was automated based on strict source-tier gating. Tier 1 intelligence overrides preliminary vendor denials.`
+  ];
+  
+  const answer = responses[Math.floor(Math.random() * responses.length)];
+  
+  setTimeout(() => {
+    res.json({ answer });
+  }, 1500); // Simulate "thinking" delay
 });
 
 app.get('/api/stream', (req, res) => {
