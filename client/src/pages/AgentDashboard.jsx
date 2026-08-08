@@ -150,11 +150,14 @@ function ResultModal({ result, onClose }) {
                   transition={{ delay: 0.4 }}
                   className="flex flex-wrap gap-2 mb-8"
                 >
-                  {result.sources.map((p, i) => (
-                    <span key={i} className="text-[10px] font-mono px-3 py-1.5 rounded-full bg-black/5 text-black/60 border border-black/10 flex items-center shadow-inner">
+                  {result.sources.map((p, i) => {
+                    const absoluteLink = p.startsWith('http') ? p : `https://${p}`;
+                    return (
+                    <a key={i} href={absoluteLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-mono px-3 py-1.5 rounded-full bg-black/5 text-black/60 hover:text-blue-600 hover:bg-blue-50 border border-black/10 flex items-center shadow-inner transition-colors cursor-pointer group/link">
                       🔗 {p.replace('https://', '')}
-                    </span>
-                  ))}
+                      <ExternalLink size={10} className="ml-1 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                    </a>
+                  )})}
                 </motion.div>
               )}
 
